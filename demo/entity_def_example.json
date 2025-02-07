@@ -1,0 +1,10 @@
+{
+    "CharacterBody3D": {
+      "floor_stop_on_slope": ["bool", true, "If true, the body will not slide on slopes when standing still."],
+      "max_slides": ["int", 6, "Maximum number of times the body can change direction before it stops when calling move_and_slide."],
+      "up_direction": ["Vector3", [0, 1, 0], "Vector pointing upwards, used to determine what is a wall and what is a floor."]
+    },
+    "Area3D": {
+      "angular_damp": ["float", 0.1, "The rate at which objects stop spinning in this area."]
+    }
+  }

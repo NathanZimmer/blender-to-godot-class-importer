@@ -231,6 +231,9 @@ def read_json(context):
         context.scene.entity_def = json.dumps(entity_dict)
 
 @persistent
+# TODO: Add support for Vector2
+# TODO: Condense the three functions that all loop over var_type. Adding in new vars
+# will be annoying until this is done.
 def init_objects(_):
     """
     Initialize global entity_dict and object classes and varaibles
