@@ -54,7 +54,10 @@ class BTGPanel(bpy.types.Panel):
             return
 
         # Loop through entity definition dictionary for the variables of this class
-        object_variables = entity_dict[active_object.class_type]
+        object_variables = {
+            f'{active_object.class_type}_{var_name}': var_val
+            for var_name, var_val in entity_dict[active_object.class_type].items()
+        }
         for variable in object_variables.keys():
             var_name = active_object.bl_rna.properties[variable].name
             entity_box.label(text=var_name)
@@ -187,11 +190,12 @@ class WriteJson(bpy.types.Operator):
             # Get list of variable names to use
             object_variables = entity_dict[object.class_type]
             object_name = object.name.replace('.', '_')  # Convert to Godot naming standards
+            class_type = object.class_type
 
             btg_json[object_name] = {
-                'class': object.class_type,
+                'class': class_type,
                 'variables': {
-                    var_name: [var_vals[0], getattr(object, var_name)] if isinstance(getattr(object, var_name), json_types)
+                    var_name: [var_vals[0], getattr(object, f'{class_type}_{var_name}')] if isinstance(getattr(object, f'{class_type}_{var_name}'), json_types)
                     # Convert non-JSON vartypes to string
                     else [var_vals[0], str(getattr(object, var_name)[0:])]
                     for var_name, var_vals in object_variables.items()
@@ -270,7 +274,7 @@ def init_objects(_):
 
             setattr(
                 bpy.types.Object,
-                var_name,
+                f'{class_name}_{var_name}',
                 prop_class(
                     name=f'{var_name}: {var_type}',
                     description=var_desc,
