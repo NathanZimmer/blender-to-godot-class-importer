@@ -168,8 +168,8 @@ class EntityTemplateReader(bpy.types.Operator):
             )
             return {'CANCELLED'}
 
-        # Initialize objects with class_name and variables from the entity template JSON
-        init_objects(None)
+        # Reinitialize after loading new entity template
+        init(None)
 
         self.report({'DEBUG'}, f'{entity_template=}')
         self.report({'INFO'}, 'Loaded JSON!')
@@ -245,12 +245,14 @@ class EntityImportWriter(bpy.types.Operator):
 
 # %% Utility Function
 @persistent
-def init_objects(_):
+def init(_):
     """
-    Initialize global `entity_template` dict and object entity definitions
+    Initialize global `entity_template` dict, search variables, and object entity definitions
     """
     global entity_template
     entity_template = json.loads(bpy.context.scene.entity_template_str)
+
+    bpy.context.scene.search_class_name = get_entity_list(None, None)[0][0]
 
     for class_name, class_def in entity_template.items():
         if class_name == 'None':
@@ -277,19 +279,29 @@ def init_objects(_):
                 prop_class(**prop_params)
             )
 
+def reset_search_var(_, context):
+    """
+    Reset scene variable `search_var` to its default for switching `search_class_name`
+    """
+    context.scene.search_var = get_var_search_list(None, context)[0][0]
 
 def set_search_val(_, context):
     """
-    Set the scene `search_val` variable based on the type of the scene `search_var` variable
+    Set the scene `search_val` variable based on the scene variables 'search_class_name' `search_var`
     """
-    var_type = (
-        entity_template[context.scene.search_class_name][context.scene.search_var][0]
-    )
-    prop_class, default = get_blender_prop(var_type)
+    search_class_name = context.scene.search_class_name
+    search_var = context.scene.search_var
+    var_type, var_default, var_desc, var_items = entity_template[search_class_name][search_var]
 
-    bpy.types.Scene.search_val = prop_class(
-        name='search value',
-    )
+    prop_class, default = get_blender_prop(var_type, var_default)
+    prop_params = {
+        'name': f'{search_var}: {var_type}',
+        'description': var_desc,
+    }
+    if var_type == 'enum':
+        prop_params['items'] = [(key, key, key) for key in var_items]
+
+    bpy.types.Scene.search_val = prop_class(**prop_params)
     context.scene.search_val = default
 
 # TODO: Add support for Vector2
@@ -396,8 +408,8 @@ def register():
     bpy.utils.register_class(EntityTemplateReader)
     bpy.utils.register_class(EntityImportWriter)
 
-    if not init_objects in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.append(init_objects)
+    if not init in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(init)
 
     # File IO
     bpy.types.Scene.entity_def_path = bpy.props.StringProperty(
@@ -419,7 +431,7 @@ def register():
         name='Godot Entities',
         description='ENUM for each object\'s class selection',
         items=get_entity_list,
-        # update=reset_object_vars,
+        update=set_search_val,
         default=0,
     )
     bpy.types.Scene.entity_template_str = bpy.props.StringProperty(
@@ -444,6 +456,7 @@ def register():
         name='Godot Entities',
         description='ENUM for searching for classes',
         items=get_entity_list,
+        update=reset_search_var,
         default=0,
     )
     bpy.types.Scene.search_var = bpy.props.EnumProperty(
@@ -460,8 +473,8 @@ def unregister():
     bpy.utils.unregister_class(EntityTemplateReader)
     bpy.utils.unregister_class(EntityImportWriter)
 
-    if init_objects in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(init_objects)
+    if init in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(init)
 
     # File IO
     del bpy.types.Scene.entity_def_path
