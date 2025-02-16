@@ -73,7 +73,7 @@ class SelectionPopup(bpy.types.Operator):
 
     def execute(self, context):
         """
-        TODO
+        Use search_ scene variables to select objects with the specified entity values
         """
         search_class = context.scene.search_class_name
 
@@ -257,25 +257,30 @@ def init_objects(_):
             continue
 
         for var_name, var_vals in class_def.items():
-            var_type, var_default, var_desc = var_vals
+            var_type, var_default, var_desc, var_items = var_vals
 
             prop_class, default = get_blender_prop(var_type, var_default)
+
+            prop_params = {
+                'name': f'{var_name}: {var_type}',
+                'description': var_desc,
+                'default': default,
+            }
+            if var_type == 'enum':
+                prop_params['items'] = [(key, key, key) for key in var_items]
 
             # NOTE: The blender api does NOT like OOP, so we have to do some shenanigans with
             # prepending class_name to var names to avoid collisions with other classes.
             setattr(
                 bpy.types.Object,
                 f'{class_name}_{var_name}',
-                prop_class(
-                    name=f'{var_name}: {var_type}',
-                    description=var_desc,
-                    default=default,
-                )
+                prop_class(**prop_params)
             )
+
 
 def set_search_val(_, context):
     """
-    TODO
+    Set the scene `search_val` variable based on the type of the scene `search_var` variable
     """
     var_type = (
         entity_template[context.scene.search_class_name][context.scene.search_var][0]
@@ -289,9 +294,19 @@ def set_search_val(_, context):
 
 # TODO: Add support for Vector2
 # TODO: Add support for Array
-def get_blender_prop(var_type, default=None):
+def get_blender_prop(var_type: str, default: any = None) -> tuple:
     """
-    TODO
+    Get Blender `bpy.props` type object and a correctly-typed default
+
+    Parameters
+    ----------
+    `var_type`: A type from the entity template
+    `default`: Optional default to return as a correctly-typed default
+
+    Returns
+    -------
+    `(prop_class, prop_default)`: A Blender `bpy.props` Property and
+    a correctly-typed default value
     """
     match(var_type):
         case 'int':
@@ -309,7 +324,9 @@ def get_blender_prop(var_type, default=None):
         case 'bool':
             prop_class = bpy.props.BoolProperty
             prop_default = False if default is None else bool(default)
-        # TODO: add enum
+        case 'enum':
+            prop_class = bpy.props.EnumProperty
+            prop_default = None if default is None else str(default)
         case _:
             prop_class = bpy.props.StringProperty
             prop_default = '' if default is None else str(default)
