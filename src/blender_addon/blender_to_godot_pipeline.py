@@ -5,9 +5,9 @@ import traceback
 from mathutils import Vector
 import numpy as np
 
-entity_dict = {}
+entity_template = {}
 
-
+# %% GUI Classes
 class BTGPanel(bpy.types.Panel):
     """
     Settings panel for the Blender to Godot pipeline
@@ -46,17 +46,17 @@ class BTGPanel(bpy.types.Panel):
         entity_box = layout.box()
 
         entity_box.label(text='Godot Class')
-        entity_box.prop(active_object, 'class_type', text='')
+        entity_box.prop(active_object, 'class_name', text='')
 
-        global entity_dict
+        global entity_template
         # Don't get variable list if this object has no associated class
-        if not active_object.class_type in entity_dict or active_object.class_type == 'None':
+        if not active_object.class_name in entity_template or active_object.class_name == 'None':
             return
 
         # Loop through entity definition dictionary for the variables of this class
         object_variables = {
-            f'{active_object.class_type}_{var_name}': var_val
-            for var_name, var_val in entity_dict[active_object.class_type].items()
+            f'{active_object.class_name}_{var_name}': var_val
+            for var_name, var_val in entity_template[active_object.class_name].items()
         }
         for variable in object_variables.keys():
             var_name = active_object.bl_rna.properties[variable].name
@@ -66,7 +66,7 @@ class BTGPanel(bpy.types.Panel):
 
 class SelectionPopup(bpy.types.Operator):
     """
-    Search for objects in the scene based on class name and/or variable definition
+    Search for objects in the scene based on class name or class variable value
     """
     bl_idname = "select_popup.open"
     bl_label = "Find objects by..."
@@ -75,22 +75,25 @@ class SelectionPopup(bpy.types.Operator):
         """
         TODO
         """
-        search_class = context.scene.class_type_search
+        search_class = context.scene.search_class_name
 
         if context.scene.search_type == 'var_val' and search_class != 'None':
-            search_var = context.scene.var_type_search
+            search_var = context.scene.search_var
             search_val = context.scene.search_val
             for object in context.scene.objects:
-                object_val = getattr(object, search_var)
-                object.select_set(object.class_type == search_class and self.close(object_val, search_val))
+                object_val = getattr(object, f'{search_class}_{search_var}')
+                object.select_set(object.class_name == search_class and self.close(object_val, search_val))
         else:
             for object in context.scene.objects:
-                object.select_set(object.class_type == search_class)
+                object.select_set(object.class_name == search_class)
 
         if len(context.selected_objects) > 0 and context.active_object not in context.selected_objects:
             context.view_layer.objects.active = context.selected_objects[0]
-        elif len(context.selectable_objects) == 0:
+
+        if len(context.selected_objects) == 0:
             self.report({'INFO'}, 'No objects found.')
+        else:
+            self.report({'INFO'}, 'Objects selected!')
 
         return {'FINISHED'}
 
@@ -107,7 +110,7 @@ class SelectionPopup(bpy.types.Operator):
 
     def invoke(self, context, _):
         """
-        TODO
+        Invoke popup
         """
         return context.window_manager.invoke_props_dialog(self)
 
@@ -122,82 +125,102 @@ class SelectionPopup(bpy.types.Operator):
 
         layout.label(text='Parameters')
         box = layout.box()
-        box.prop(context.scene, 'class_type_search', text='')
-        if context.scene.class_type_search == 'None':
+        box.prop(context.scene, 'search_class_name', text='')
+        if context.scene.search_class_name == 'None':
             return
 
         if context.scene.search_type == 'var_val':
-            box.prop(context.scene, 'var_type_search', text='')
+            box.prop(context.scene, 'search_var', text='')
             box.prop(context.scene, 'search_val', text='')
 
 
-class ReadJson(bpy.types.Operator):
+# %% Operator Classes
+class EntityTemplateReader(bpy.types.Operator):
     """
-    Read Godot entity definition JSON
+    Read Godot entity template JSON and save to global `entity_template` dict
     """
     bl_idname = 'json.read'
     bl_label = 'Read entity JSON'
 
     def execute(self, context):
         """
-        Read entity definition from JSON and initialize values for all scene objects
+        Read entity template from JSON and initialize values for all scene objects
         """
         # Putting this in a try-catch to prevent users from locking themselves out of loading
         # a new JSON
+        global entity_template
         try:
             # Free variables from old def JSON
-            global entity_dict
-            free_object_variables(entity_dict)
+            free_object_variables(entity_template)
         except:
             self.report({'ERROR'}, 'Could not free variables')
 
         try:
-            read_json(context)
+            self.read_template_json()
         except Exception:
             self.report(
                 {'ERROR'}, f'Failed to load JSON file with exception:\n{traceback.format_exc()}'
             )
             return {'CANCELLED'}
 
-        # Initialize objects with class_name and variables from the entity JSON
-        init_objects(context.scene)
+        # Initialize objects with class_name and variables from the entity template JSON
+        init_objects(None)
 
+        self.report({'DEBUG'}, f'{entity_template=}')
         self.report({'INFO'}, 'Loaded JSON!')
-        # self.report({'INFO'}, f'{context.scene.entity_def=}')
         return {'FINISHED'}
 
+    @staticmethod
+    def read_template_json():
+        """
+        Read json from scene var `entity_def_path` into scene var `entity_template_str` and global var `entity_template`
+        """
+        with open(bpy.context.scene.entity_def_path) as file:
+            # Place 'None' at the first index for defaulting
+            global entity_template
+            entity_template = {'None': ''}
+            entity_template |= json.load(file)
 
-class WriteJson(bpy.types.Operator):
+            # NOTE: Blender cannot store dict type objects, so this is a workaround
+            # to preserve the dict between blender sessions.
+            bpy.context.scene.entity_template_str = json.dumps(entity_template)
+
+
+class EntityImportWriter(bpy.types.Operator):
     """
-    Write Blender to Godot import JSON
+    Write BTG import JSON from entity defintions
     """
     bl_idname = 'json.write'
     bl_label = 'Write BTG import JSON'
 
     def execute(self, context):
         """
-        Write scene object classes and variables to Godot import JSON
+        Write entity definitions to Godot import JSON
         """
         btg_json = {}
-        global entity_dict
+        global entity_template
         json_types = (int, str, bool, float)  # Values that can be translated to JSON format
 
         for object in context.scene.objects:
             # Ignore objects with no class
-            if object.class_type == 'None':
+            if object.class_name == 'None':
                 continue
 
             # Get list of variable names to use
-            object_variables = entity_dict[object.class_type]
+            class_name = object.class_name
+            object_variables = entity_template[class_name]
             object_name = object.name.replace('.', '_')  # Convert to Godot naming standards
-            class_type = object.class_type
+
+            # NOTE: The blender api does NOT like OOP, so we have to do some shenanigans with
+            # prepending class_name to var names to avoid collisions with other classes.
+            get_var = lambda var_name: getattr(object, f'{class_name}_{var_name}')
 
             btg_json[object_name] = {
-                'class': class_type,
+                'class': class_name,
                 'variables': {
-                    var_name: [var_vals[0], getattr(object, f'{class_type}_{var_name}')] if isinstance(getattr(object, f'{class_type}_{var_name}'), json_types)
+                    var_name: [var_vals[0], get_var(var_name)] if isinstance(get_var(var_name), json_types)
                     # Convert non-JSON vartypes to string
-                    else [var_vals[0], str(getattr(object, var_name)[0:])]
+                    else [var_vals[0], str(get_var(var_name)[0:])]
                     for var_name, var_vals in object_variables.items()
                 }
             }
@@ -206,7 +229,7 @@ class WriteJson(bpy.types.Operator):
             with open(context.scene.btg_write_path, 'w+') as file:
                 json.dump(btg_json, file)
 
-            # self.report({'INFO'}, f'{btg_json=}')
+            self.report({'DEBUG'}, f'{btg_json=}')
             self.report({'INFO'}, 'Wrote JSON!')
             return {'FINISHED'}
         except Exception:
@@ -215,37 +238,20 @@ class WriteJson(bpy.types.Operator):
             )
             return {'CANCELLED'}
 
-
-def read_json(context):
-    """
-    Read json from path `entity_def_path` scene variable into `entity` scene variable
-
-    Parameters
-    ----------
-    `context`: The bpy context to read `entity_def_path` from.
-    """
-    with open(context.scene.entity_def_path) as file:
-        # Place 'None' at the first index for defaulting
-        global entity_dict
-        entity_dict = {'None': ''}
-        entity_dict |= json.load(file)
-
-        # NOTE: Blender cannot store dict type objects, so this is a workaround
-        # to preserve the dict between blender sessions.
-        context.scene.entity_def = json.dumps(entity_dict)
-
+# %% Utility Function
 @persistent
 # TODO: Add support for Vector2
+# TODO: Add support for Array
 # TODO: Condense the three functions that all loop over var_type. Adding in new vars
 # will be annoying until this is done.
 def init_objects(_):
     """
-    Initialize global entity_dict and object classes and varaibles
+    Initialize global `entity_template` dict and object entity definitions
     """
-    global entity_dict
-    entity_dict = json.loads(bpy.context.scene.entity_def)
+    global entity_template
+    entity_template = json.loads(bpy.context.scene.entity_template_str)
 
-    for class_name, class_def in entity_dict.items():
+    for class_name, class_def in entity_template.items():
         if class_name == 'None':
             continue
 
@@ -272,6 +278,8 @@ def init_objects(_):
                 prop_class = bpy.props.StringProperty
                 default = str(var_default)
 
+            # NOTE: The blender api does NOT like OOP, so we have to do some shenanigans with
+            # prepending class_name to var names to avoid collisions with other classes.
             setattr(
                 bpy.types.Object,
                 f'{class_name}_{var_name}',
@@ -286,7 +294,7 @@ def init_objects(_):
 # error when evaluating equality
 def set_search_prop(_, context):
     var_type = (
-        entity_dict[context.scene.class_type_search][context.scene.var_type_search][0]
+        entity_template[context.scene.search_class_name][context.scene.search_var][0]
     )
     if var_type == 'int':
         prop_class = bpy.props.IntProperty
@@ -317,10 +325,10 @@ def reset_object_vars(self, context):
     """
     Reset the vars of this object to their defaults
     """
-    global entity_dict
-    entity_dict = json.loads(context.scene.entity_def)
+    global entity_template
+    entity_template = json.loads(context.scene.entity_template_str)
 
-    for class_name, class_def in entity_dict.items():
+    for class_name, class_def in entity_template.items():
         if class_name == 'None':
             continue
 
@@ -347,34 +355,34 @@ def get_entity_list(_, _0):
     """
     Get the keys from `entity_dict` in blender ENUM format
     """
-    global entity_dict
-    return [(key, key, key) for key in entity_dict.keys()]
+    global entity_template
+    return [(key, key, key) for key in entity_template.keys()]
 
 def get_var_search_list(_, context):
     """
-    Get the vars for `context.scene.class_type_search` in blender ENUM format
+    Get the vars for `context.scene.search_class_name` in blender ENUM format
     """
-    global entity_dict
-    search_class = entity_dict[context.scene.class_type_search]
+    global entity_template
+    search_class = entity_template[context.scene.search_class_name]
     return [(key, key, key) for key in search_class.keys()]
 
-def free_object_variables(entity_dict: dict):
+def free_object_variables(entity_template: dict):
     """
-    Free entity JSON defined variables for switching entity def or unloading addon
+    Free entity JSON defined variables for switching entity template or unloading addon
     """
-    for class_name, class_def in entity_dict.items():
+    for class_name, class_def in entity_template.items():
         if class_name == 'None':
             continue
 
         for var_name in class_def.keys():
-            variable = getattr(bpy.types.Object, var_name)
-            del variable
+            delattr(bpy.types.Object, var_name)
 
+# %% Blender API Setup
 def register():
     bpy.utils.register_class(BTGPanel)
-    bpy.utils.register_class(ReadJson)
-    bpy.utils.register_class(WriteJson)
     bpy.utils.register_class(SelectionPopup)
+    bpy.utils.register_class(EntityTemplateReader)
+    bpy.utils.register_class(EntityImportWriter)
 
     if not init_objects in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.append(init_objects)
@@ -395,14 +403,14 @@ def register():
     )
 
     # Entity definition
-    bpy.types.Object.class_type = bpy.props.EnumProperty(
+    bpy.types.Object.class_name = bpy.props.EnumProperty(
         name='Godot Entities',
         description='ENUM for each object\'s class selection',
         items=get_entity_list,
         update=reset_object_vars,
         default=0,
     )
-    bpy.types.Scene.entity_def = bpy.props.StringProperty(
+    bpy.types.Scene.entity_template_str = bpy.props.StringProperty(
         name='Godot Entity JSON',
         description=(
             'Stores the entity definition for use between blender sessions. This is'
@@ -420,15 +428,15 @@ def register():
         description='ENUM for selecting search option',
         default=0,
     )
-    bpy.types.Scene.class_type_search = bpy.props.EnumProperty(
+    bpy.types.Scene.search_class_name = bpy.props.EnumProperty(
         name='Godot Entities',
         description='ENUM for searching for classes',
         items=get_entity_list,
         default=0,
     )
-    bpy.types.Scene.var_type_search = bpy.props.EnumProperty(
+    bpy.types.Scene.search_var = bpy.props.EnumProperty(
         name='Godot Entity variables',
-        description='ENUM for searching for classes',
+        description='ENUM for searching for variable values',
         items=get_var_search_list,
         update=set_search_prop,
         default=0,
@@ -436,9 +444,9 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(BTGPanel)
-    bpy.utils.unregister_class(ReadJson)
-    bpy.utils.unregister_class(WriteJson)
     bpy.utils.unregister_class(SelectionPopup)
+    bpy.utils.unregister_class(EntityTemplateReader)
+    bpy.utils.unregister_class(EntityImportWriter)
 
     if init_objects in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(init_objects)
@@ -448,15 +456,14 @@ def unregister():
     del bpy.types.Scene.btg_write_path
 
     # Entity definition
-    del bpy.types.Object.class_type
+    del bpy.types.Object.class_name
     # Free entity definition variables loaded from the JSON
-    global entity_dict
-    free_object_variables(entity_dict)
-    del bpy.types.Scene.entity_def
+    global entity_template
+    free_object_variables(entity_template)
+    del bpy.types.Scene.entity_template_str
 
     # Property searching
-    del bpy.types.Object.class_type_search
-    del bpy.types.Scene.class_type_search
+    del bpy.types.Scene.search_class_name
     if 'search_val' in bpy.context.scene:
         del bpy.types.Scene.search_val
 
