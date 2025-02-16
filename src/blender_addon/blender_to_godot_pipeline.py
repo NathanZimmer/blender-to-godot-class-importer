@@ -80,6 +80,11 @@ class SelectionPopup(bpy.types.Operator):
         if context.scene.search_type == 'var_val' and search_class != 'None':
             search_var = context.scene.search_var
             search_val = context.scene.search_val
+
+            if search_var == '':
+                self.report({'WARNING'}, 'No search variable selected.')
+                return {'CANCELLED'}
+
             for object in context.scene.objects:
                 object_val = getattr(object, f'{search_class}_{search_var}')
                 object.select_set(object.class_name == search_class and self.close(object_val, search_val))
@@ -142,7 +147,7 @@ class EntityTemplateReader(bpy.types.Operator):
     bl_idname = 'json.read'
     bl_label = 'Read entity JSON'
 
-    def execute(self, context):
+    def execute(self, _):
         """
         Read entity template from JSON and initialize values for all scene objects
         """
@@ -268,9 +273,10 @@ def init_objects(_):
                 )
             )
 
-# FIXME: Switching from a bool to a vector does not update `search_val`, which causes an
-# error when evaluating equality
-def set_search_prop(_, context):
+def set_search_val(_, context):
+    """
+    TODO
+    """
     var_type = (
         entity_template[context.scene.search_class_name][context.scene.search_var][0]
     )
@@ -427,7 +433,7 @@ def register():
         name='Godot Entity variables',
         description='ENUM for searching for variable values',
         items=get_var_search_list,
-        update=set_search_prop,
+        update=set_search_val,
         default=0,
     )
 
