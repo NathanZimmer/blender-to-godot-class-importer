@@ -240,10 +240,6 @@ class EntityImportWriter(bpy.types.Operator):
 
 # %% Utility Function
 @persistent
-# TODO: Add support for Vector2
-# TODO: Add support for Array
-# TODO: Condense the three functions that all loop over var_type. Adding in new vars
-# will be annoying until this is done.
 def init_objects(_):
     """
     Initialize global `entity_template` dict and object entity definitions
@@ -258,25 +254,7 @@ def init_objects(_):
         for var_name, var_vals in class_def.items():
             var_type, var_default, var_desc = var_vals
 
-            if var_type == 'int':
-                prop_class = bpy.props.IntProperty
-                default = int(var_default)
-            elif var_type == 'float':
-                prop_class = bpy.props.FloatProperty
-                default = float(var_default)
-            elif var_type == 'Vector3':
-                prop_class = bpy.props.FloatVectorProperty
-                default = Vector(var_default)
-            elif var_type == 'Vector3i':
-                prop_class = bpy.props.IntVectorProperty
-                default = Vector(var_default)
-            elif var_type == 'bool':
-                prop_class = bpy.props.BoolProperty
-                default = bool(var_default)
-            # TODO: add enum
-            else:
-                prop_class = bpy.props.StringProperty
-                default = str(var_default)
+            prop_class, default = get_blender_prop(var_type, var_default)
 
             # NOTE: The blender api does NOT like OOP, so we have to do some shenanigans with
             # prepending class_name to var names to avoid collisions with other classes.
@@ -296,60 +274,71 @@ def set_search_prop(_, context):
     var_type = (
         entity_template[context.scene.search_class_name][context.scene.search_var][0]
     )
-    if var_type == 'int':
-        prop_class = bpy.props.IntProperty
-        default = 0
-    elif var_type == 'float':
-        prop_class = bpy.props.FloatProperty
-        default = 0.0
-    elif var_type == 'Vector3':
-        prop_class = bpy.props.FloatVectorProperty
-        default = Vector((0.0, 0.0, 0.0))
-    elif var_type == 'Vector3i':
-        prop_class = bpy.props.IntVectorProperty
-        default = Vector((0, 0, 0))
-    elif var_type == 'bool':
-        prop_class = bpy.props.BoolProperty
-        default = False
-    # TODO: add enum
-    else:
-        prop_class = bpy.props.StringProperty
-        default = ''
+    prop_class, default = get_blender_prop(var_type)
 
     bpy.types.Scene.search_val = prop_class(
         name='search value',
     )
     context.scene.search_val = default
 
-def reset_object_vars(self, context):
+# TODO: Add support for Vector2
+# TODO: Add support for Array
+def get_blender_prop(var_type, default=None):
     """
-    Reset the vars of this object to their defaults
+    TODO
     """
-    global entity_template
-    entity_template = json.loads(context.scene.entity_template_str)
+    match(var_type):
+        case 'int':
+            prop_class = bpy.props.IntProperty
+            prop_default = 0 if default is None else int(default)
+        case 'float':
+            prop_class = bpy.props.FloatProperty
+            prop_default = 0.0 if default is None else float(default)
+        case 'Vector3':
+            prop_class = bpy.props.FloatVectorProperty
+            prop_default = Vector((0.0, 0.0, 0.0)) if default is None else Vector(default)
+        case 'Vector3i':
+            prop_class = bpy.props.IntVectorProperty
+            prop_default = Vector((0, 0, 0)) if default is None else Vector(default)
+        case 'bool':
+            prop_class = bpy.props.BoolProperty
+            prop_default = False if default is None else bool(default)
+        # TODO: add enum
+        case _:
+            prop_class = bpy.props.StringProperty
+            prop_default = '' if default is None else str(default)
 
-    for class_name, class_def in entity_template.items():
-        if class_name == 'None':
-            continue
+    return prop_class, prop_default
 
-        for var_name, var_vals in class_def.items():
-            var_type, var_default, _ = var_vals
+# def reset_object_vars(self, context):
+#     """
+#     Reset the vars of this object to their defaults
+#     """
+#     global entity_template
+#     entity_template = json.loads(context.scene.entity_template_str)
 
-            if var_type == 'int':
-                default = int(var_default)
-            elif var_type == 'float':
-                default = float(var_default)
-            elif var_type == 'Vector3':
-                default = Vector(var_default)
-            elif var_type == 'Vector3i':
-                default = Vector(var_default)
-            elif var_type == 'bool':
-                default = bool(var_default)
-            # TODO: add enum
-            else:
-                default = str(var_default)
+#     for class_name, class_def in entity_template.items():
+#         if class_name == 'None':
+#             continue
 
-            self[var_name] = default
+#         for var_name, var_vals in class_def.items():
+#             var_type, var_default, _ = var_vals
+
+#             if var_type == 'int':
+#                 default = int(var_default)
+#             elif var_type == 'float':
+#                 default = float(var_default)
+#             elif var_type == 'Vector3':
+#                 default = Vector(var_default)
+#             elif var_type == 'Vector3i':
+#                 default = Vector(var_default)
+#             elif var_type == 'bool':
+#                 default = bool(var_default)
+#             # TODO: add enum
+#             else:
+#                 default = str(var_default)
+
+#             self[var_name] = default
 
 def get_entity_list(_, _0):
     """
@@ -407,7 +396,7 @@ def register():
         name='Godot Entities',
         description='ENUM for each object\'s class selection',
         items=get_entity_list,
-        update=reset_object_vars,
+        # update=reset_object_vars,
         default=0,
     )
     bpy.types.Scene.entity_template_str = bpy.props.StringProperty(
