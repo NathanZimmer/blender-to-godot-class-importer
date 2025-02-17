@@ -73,16 +73,25 @@ class SelectionPopup(bpy.types.Operator):
 
     def execute(self, context):
         """
-        TODO
+        Use search_ scene variables to select objects with the specified entity values
         """
         search_class = context.scene.search_class_name
 
         if context.scene.search_type == 'var_val' and search_class != 'None':
             search_var = context.scene.search_var
             search_val = context.scene.search_val
+
+            if search_var == '':
+                self.report({'WARNING'}, 'No search variable selected.')
+                return {'CANCELLED'}
+
             for object in context.scene.objects:
                 object_val = getattr(object, f'{search_class}_{search_var}')
-                object.select_set(object.class_name == search_class and self.close(object_val, search_val))
+
+                object.select_set(
+                    object.class_name == search_class
+                    and SelectionPopup.compare(object_val, search_val, context.scene.comparison_type)
+                )
         else:
             for object in context.scene.objects:
                 object.select_set(object.class_name == search_class)
@@ -98,7 +107,7 @@ class SelectionPopup(bpy.types.Operator):
         return {'FINISHED'}
 
     @staticmethod
-    def close(x, y, delta=1.e-8):
+    def close(x: any, y: any, delta: float = 1.e-8) -> bool:
         """
         Check if vars `x` and `y` are within `delta` distance
         """
@@ -108,7 +117,35 @@ class SelectionPopup(bpy.types.Operator):
 
         return np.allclose(x, y, atol=delta)
 
-    def invoke(self, context, _):
+    @staticmethod
+    def compare(x: any, y: any, comp_type: str) -> bool:
+        """
+        Compares inputs `x` and `y` based on `comp_type`
+
+        parameters
+        ----------
+        `x`, `y`: Inputs to compare
+        `comp_type`: Method of comparison. Valid input: `'<', '<=', '==', '>', '>='`
+
+        returns
+        -------
+        `result`: result of `x` compared to `y` by `comp_type`
+        """
+        match (comp_type):
+            case '<':
+                return x < y
+            case '<=':
+                return x <= y
+            case '==':
+                return SelectionPopup.close(x, y)
+            case '>':
+                return x > y
+            case '>=':
+                return x >= y
+            case '_':
+                return SelectionPopup.close(x, y)
+
+    def invoke(self, context, event):
         """
         Invoke popup
         """
@@ -131,6 +168,8 @@ class SelectionPopup(bpy.types.Operator):
 
         if context.scene.search_type == 'var_val':
             box.prop(context.scene, 'search_var', text='')
+            if isinstance(context.scene.search_val, (int, float, bpy.types.bpy_prop_array)):
+                box.prop(context.scene, 'comparison_type', text='')
             box.prop(context.scene, 'search_val', text='')
 
 
@@ -163,15 +202,15 @@ class EntityTemplateReader(bpy.types.Operator):
             )
             return {'CANCELLED'}
 
-        # Initialize objects with class_name and variables from the entity template JSON
-        init_objects(None)
+        # Reinitialize after loading new entity template
+        init()
 
         self.report({'DEBUG'}, f'{entity_template=}')
         self.report({'INFO'}, 'Loaded JSON!')
         return {'FINISHED'}
 
     @staticmethod
-    def read_template_json():
+    def read_template_json() -> None:
         """
         Read json from scene var `entity_def_path` into scene var `entity_template_str` and global var `entity_template`
         """
@@ -239,126 +278,150 @@ class EntityImportWriter(bpy.types.Operator):
             return {'CANCELLED'}
 
 # %% Utility Function
+# NOTE: Weird/unused function params come from API input requirements
+
 @persistent
-# TODO: Add support for Vector2
-# TODO: Add support for Array
-# TODO: Condense the three functions that all loop over var_type. Adding in new vars
-# will be annoying until this is done.
-def init_objects(_):
+def init(file=None) -> None:
     """
-    Initialize global `entity_template` dict and object entity definitions
+    Initialize global `entity_template` dict, search variables, and object entity definitions
     """
     global entity_template
     entity_template = json.loads(bpy.context.scene.entity_template_str)
 
+    bpy.context.scene.search_class_name = get_entity_list()[0][0]
+
+    # Populate entity-definition object vars
     for class_name, class_def in entity_template.items():
         if class_name == 'None':
             continue
 
         for var_name, var_vals in class_def.items():
-            var_type, var_default, var_desc = var_vals
+            var_type, var_default, var_desc, var_items = var_vals
 
-            if var_type == 'int':
-                prop_class = bpy.props.IntProperty
-                default = int(var_default)
-            elif var_type == 'float':
-                prop_class = bpy.props.FloatProperty
-                default = float(var_default)
-            elif var_type == 'Vector3':
-                prop_class = bpy.props.FloatVectorProperty
-                default = Vector(var_default)
-            elif var_type == 'Vector3i':
-                prop_class = bpy.props.IntVectorProperty
-                default = Vector(var_default)
-            elif var_type == 'bool':
-                prop_class = bpy.props.BoolProperty
-                default = bool(var_default)
-            # TODO: add enum
-            else:
-                prop_class = bpy.props.StringProperty
-                default = str(var_default)
+            prop_class, default = get_blender_prop(var_type, var_default)
+
+            prop_params = {
+                'name': f'{var_name}: {var_type}',
+                'description': var_desc,
+                'default': default,
+            }
+            if var_type == 'enum':
+                prop_params['items'] = [(key, key, key) for key in var_items]
 
             # NOTE: The blender api does NOT like OOP, so we have to do some shenanigans with
             # prepending class_name to var names to avoid collisions with other classes.
             setattr(
                 bpy.types.Object,
                 f'{class_name}_{var_name}',
-                prop_class(
-                    name=f'{var_name}: {var_type}',
-                    description=var_desc,
-                    default=default,
-                )
+                prop_class(**prop_params)
             )
 
-# FIXME: Switching from a bool to a vector does not update `search_val`, which causes an
-# error when evaluating equality
-def set_search_prop(_, context):
-    var_type = (
-        entity_template[context.scene.search_class_name][context.scene.search_var][0]
-    )
-    if var_type == 'int':
-        prop_class = bpy.props.IntProperty
-        default = 0
-    elif var_type == 'float':
-        prop_class = bpy.props.FloatProperty
-        default = 0.0
-    elif var_type == 'Vector3':
-        prop_class = bpy.props.FloatVectorProperty
-        default = Vector((0.0, 0.0, 0.0))
-    elif var_type == 'Vector3i':
-        prop_class = bpy.props.IntVectorProperty
-        default = Vector((0, 0, 0))
-    elif var_type == 'bool':
-        prop_class = bpy.props.BoolProperty
-        default = False
-    # TODO: add enum
-    else:
-        prop_class = bpy.props.StringProperty
-        default = ''
+def reset_search_var(self=None, context=bpy.context) -> None:
+    """
+    Reset scene variable `search_var` to its default for switching `search_class_name`
+    """
+    context.scene.search_var = get_var_search_list()[0][0]
 
-    bpy.types.Scene.search_val = prop_class(
-        name='search value',
-    )
+def set_search_val(self=None, context=bpy.context) -> None:
+    """
+    Set the scene `search_val` variable based on the scene variables 'search_class_name' `search_var`
+    """
+    context.scene.comparison_type = '=='
+
+    search_class_name = context.scene.search_class_name
+    search_var = context.scene.search_var
+    var_type, var_default, var_desc, var_items = entity_template[search_class_name][search_var]
+
+    prop_class, default = get_blender_prop(var_type, var_default)
+    prop_params = {
+        'name': f'{search_var}: {var_type}',
+        'description': var_desc,
+    }
+    if var_type == 'enum':
+        prop_params['items'] = [(key, key, key) for key in var_items]
+
+    bpy.types.Scene.search_val = prop_class(**prop_params)
     context.scene.search_val = default
 
-def reset_object_vars(self, context):
+# TODO: Add support for Vector2
+# TODO: Add support for Array
+def get_blender_prop(var_type: str, default: any = None) -> tuple[callable, any]:
     """
-    Reset the vars of this object to their defaults
+    Get Blender `bpy.props` type object and a correctly-typed default
+
+    Parameters
+    ----------
+    `var_type`: A type from the entity template
+    `default`: Optional default to return as a correctly-typed default
+
+    Returns
+    -------
+    `(prop_class, prop_default)`: A Blender `bpy.props` Property function
+    and a correctly-typed default value
     """
-    global entity_template
-    entity_template = json.loads(context.scene.entity_template_str)
+    match(var_type):
+        case 'int':
+            prop_class = bpy.props.IntProperty
+            prop_default = 0 if default is None else int(default)
+        case 'float':
+            prop_class = bpy.props.FloatProperty
+            prop_default = 0.0 if default is None else float(default)
+        case 'Vector3':
+            prop_class = bpy.props.FloatVectorProperty
+            prop_default = Vector((0.0, 0.0, 0.0)) if default is None else Vector(default)
+        case 'Vector3i':
+            prop_class = bpy.props.IntVectorProperty
+            prop_default = Vector((0, 0, 0)) if default is None else Vector(default)
+        case 'bool':
+            prop_class = bpy.props.BoolProperty
+            prop_default = False if default is None else bool(default)
+        case 'enum':
+            prop_class = bpy.props.EnumProperty
+            prop_default = None if default is None else str(default)
+        case _:
+            prop_class = bpy.props.StringProperty
+            prop_default = '' if default is None else str(default)
 
-    for class_name, class_def in entity_template.items():
-        if class_name == 'None':
-            continue
+    return prop_class, prop_default
 
-        for var_name, var_vals in class_def.items():
-            var_type, var_default, _ = var_vals
+# def reset_object_vars(self, context):
+#     """
+#     Reset the vars of this object to their defaults
+#     """
+#     global entity_template
+#     entity_template = json.loads(context.scene.entity_template_str)
 
-            if var_type == 'int':
-                default = int(var_default)
-            elif var_type == 'float':
-                default = float(var_default)
-            elif var_type == 'Vector3':
-                default = Vector(var_default)
-            elif var_type == 'Vector3i':
-                default = Vector(var_default)
-            elif var_type == 'bool':
-                default = bool(var_default)
-            # TODO: add enum
-            else:
-                default = str(var_default)
+#     for class_name, class_def in entity_template.items():
+#         if class_name == 'None':
+#             continue
 
-            self[var_name] = default
+#         for var_name, var_vals in class_def.items():
+#             var_type, var_default, _ = var_vals
 
-def get_entity_list(_, _0):
+#             if var_type == 'int':
+#                 default = int(var_default)
+#             elif var_type == 'float':
+#                 default = float(var_default)
+#             elif var_type == 'Vector3':
+#                 default = Vector(var_default)
+#             elif var_type == 'Vector3i':
+#                 default = Vector(var_default)
+#             elif var_type == 'bool':
+#                 default = bool(var_default)
+#             # TODO: add enum
+#             else:
+#                 default = str(var_default)
+
+#             self[var_name] = default
+
+def get_entity_list(self=None, context=None) -> list[tuple[str, str, str]]:
     """
     Get the keys from `entity_dict` in blender ENUM format
     """
     global entity_template
     return [(key, key, key) for key in entity_template.keys()]
 
-def get_var_search_list(_, context):
+def get_var_search_list(self=None, context=bpy.context) -> list[tuple[str, str, str]]:
     """
     Get the vars for `context.scene.search_class_name` in blender ENUM format
     """
@@ -366,7 +429,7 @@ def get_var_search_list(_, context):
     search_class = entity_template[context.scene.search_class_name]
     return [(key, key, key) for key in search_class.keys()]
 
-def free_object_variables(entity_template: dict):
+def free_object_variables(entity_template: dict) -> None:
     """
     Free entity JSON defined variables for switching entity template or unloading addon
     """
@@ -384,8 +447,8 @@ def register():
     bpy.utils.register_class(EntityTemplateReader)
     bpy.utils.register_class(EntityImportWriter)
 
-    if not init_objects in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.append(init_objects)
+    if not init in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(init)
 
     # File IO
     bpy.types.Scene.entity_def_path = bpy.props.StringProperty(
@@ -407,7 +470,6 @@ def register():
         name='Godot Entities',
         description='ENUM for each object\'s class selection',
         items=get_entity_list,
-        update=reset_object_vars,
         default=0,
     )
     bpy.types.Scene.entity_template_str = bpy.props.StringProperty(
@@ -428,17 +490,30 @@ def register():
         description='ENUM for selecting search option',
         default=0,
     )
+    bpy.types.Scene.comparison_type = bpy.props.EnumProperty(
+        items=[
+            ('<', '<', 'less than'),
+            ('<=', '<=', 'less than or equal to'),
+            ('==', '==', 'equal to'),
+            ('>', '>', 'greater than'),
+            ('>=', '>=', 'greater than or equal to'),
+
+        ],
+        description='ENUM for comparison type',
+        default=0,
+    )
     bpy.types.Scene.search_class_name = bpy.props.EnumProperty(
         name='Godot Entities',
         description='ENUM for searching for classes',
         items=get_entity_list,
+        update=reset_search_var,
         default=0,
     )
     bpy.types.Scene.search_var = bpy.props.EnumProperty(
         name='Godot Entity variables',
         description='ENUM for searching for variable values',
         items=get_var_search_list,
-        update=set_search_prop,
+        update=set_search_val,
         default=0,
     )
 
@@ -448,8 +523,8 @@ def unregister():
     bpy.utils.unregister_class(EntityTemplateReader)
     bpy.utils.unregister_class(EntityImportWriter)
 
-    if init_objects in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(init_objects)
+    if init in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(init)
 
     # File IO
     del bpy.types.Scene.entity_def_path
