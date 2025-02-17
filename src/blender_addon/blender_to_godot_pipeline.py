@@ -87,7 +87,11 @@ class SelectionPopup(bpy.types.Operator):
 
             for object in context.scene.objects:
                 object_val = getattr(object, f'{search_class}_{search_var}')
-                object.select_set(object.class_name == search_class and self.close(object_val, search_val))
+
+                object.select_set(
+                    object.class_name == search_class
+                    and SelectionPopup.compare(object_val, search_val, context.scene.comparison_type)
+                )
         else:
             for object in context.scene.objects:
                 object.select_set(object.class_name == search_class)
@@ -113,6 +117,23 @@ class SelectionPopup(bpy.types.Operator):
 
         return np.allclose(x, y, atol=delta)
 
+    @staticmethod
+    def compare(x, y, comp_type):
+        """
+        TODO
+        """
+        match (comp_type):
+            case '<':
+                return x < y
+            case '<=':
+                return x <= y
+            case '==':
+                return SelectionPopup.close(x, y)
+            case '>':
+                return x > y
+            case '>=':
+                return x >= y
+
     def invoke(self, context, _):
         """
         Invoke popup
@@ -136,6 +157,8 @@ class SelectionPopup(bpy.types.Operator):
 
         if context.scene.search_type == 'var_val':
             box.prop(context.scene, 'search_var', text='')
+            if isinstance(context.scene.search_val, (int, float, bpy.types.bpy_prop_array)):
+                box.prop(context.scene, 'comparison_type', text='')
             box.prop(context.scene, 'search_val', text='')
 
 
@@ -245,6 +268,7 @@ class EntityImportWriter(bpy.types.Operator):
 
 # %% Utility Function
 # NOTE: Weird/unused function params come from API input requirements
+
 @persistent
 def init(file=None):
     """
@@ -291,6 +315,8 @@ def set_search_val(self=None, context=bpy.context):
     """
     Set the scene `search_val` variable based on the scene variables 'search_class_name' `search_var`
     """
+    context.scene.comparison_type = '=='
+
     search_class_name = context.scene.search_class_name
     search_var = context.scene.search_var
     var_type, var_default, var_desc, var_items = entity_template[search_class_name][search_var]
@@ -451,6 +477,18 @@ def register():
             ('var_val', 'Variable value', 'Select all objects with this variable value')
         ],
         description='ENUM for selecting search option',
+        default=0,
+    )
+    bpy.types.Scene.comparison_type = bpy.props.EnumProperty(
+        items=[
+            ('<', '<', 'less than'),
+            ('<=', '<=', 'less than or equal to'),
+            ('==', '==', 'equal to'),
+            ('>', '>', 'greater than'),
+            ('>=', '>=', 'greater than or equal to'),
+
+        ],
+        description='ENUM for comparison type',
         default=0,
     )
     bpy.types.Scene.search_class_name = bpy.props.EnumProperty(
