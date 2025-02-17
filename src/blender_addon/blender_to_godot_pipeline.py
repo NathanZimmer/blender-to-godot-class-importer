@@ -255,13 +255,6 @@ def init(file=None):
 
     bpy.context.scene.search_class_name = get_entity_list()[0][0]
 
-    # Set paths to cwd if they don't have a user-set value
-    if file is not None and file != '':
-        if bpy.context.scene.entity_def_path == '':
-            bpy.context.scene.entity_def_path = bpy.path.abspath('//')
-        if bpy.context.scene.btg_write_path == '':
-            bpy.context.scene.btg_write_path = bpy.path.abspath('//')
-
     # Populate entity-definition object vars
     for class_name, class_def in entity_template.items():
         if class_name == 'None':
