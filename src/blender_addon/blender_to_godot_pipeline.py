@@ -169,7 +169,7 @@ class EntityTemplateReader(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Reinitialize after loading new entity template
-        init(None)
+        init()
 
         self.report({'DEBUG'}, f'{entity_template=}')
         self.report({'INFO'}, 'Loaded JSON!')
@@ -244,16 +244,25 @@ class EntityImportWriter(bpy.types.Operator):
             return {'CANCELLED'}
 
 # %% Utility Function
+# NOTE: Weird/unused function params come from API input requirements
 @persistent
-def init(_):
+def init(file=None):
     """
     Initialize global `entity_template` dict, search variables, and object entity definitions
     """
     global entity_template
     entity_template = json.loads(bpy.context.scene.entity_template_str)
 
-    bpy.context.scene.search_class_name = get_entity_list(None, None)[0][0]
+    bpy.context.scene.search_class_name = get_entity_list()[0][0]
 
+    # Set paths to cwd if they don't have a user-set value
+    if file is not None and file != '':
+        if bpy.context.scene.entity_def_path == '':
+            bpy.context.scene.entity_def_path = bpy.path.abspath('//')
+        if bpy.context.scene.btg_write_path == '':
+            bpy.context.scene.btg_write_path = bpy.path.abspath('//')
+
+    # Populate entity-definition object vars
     for class_name, class_def in entity_template.items():
         if class_name == 'None':
             continue
@@ -279,13 +288,13 @@ def init(_):
                 prop_class(**prop_params)
             )
 
-def reset_search_var(_, context):
+def reset_search_var(self=None, context=bpy.context):
     """
     Reset scene variable `search_var` to its default for switching `search_class_name`
     """
-    context.scene.search_var = get_var_search_list(None, context)[0][0]
+    context.scene.search_var = get_var_search_list()[0][0]
 
-def set_search_val(_, context):
+def set_search_val(self=None, context=bpy.context):
     """
     Set the scene `search_val` variable based on the scene variables 'search_class_name' `search_var`
     """
@@ -375,14 +384,14 @@ def get_blender_prop(var_type: str, default: any = None) -> tuple:
 
 #             self[var_name] = default
 
-def get_entity_list(_, _0):
+def get_entity_list(self=None, context=None):
     """
     Get the keys from `entity_dict` in blender ENUM format
     """
     global entity_template
     return [(key, key, key) for key in entity_template.keys()]
 
-def get_var_search_list(_, context):
+def get_var_search_list(self=None, context=bpy.context):
     """
     Get the vars for `context.scene.search_class_name` in blender ENUM format
     """
@@ -431,7 +440,6 @@ def register():
         name='Godot Entities',
         description='ENUM for each object\'s class selection',
         items=get_entity_list,
-        update=set_search_val,
         default=0,
     )
     bpy.types.Scene.entity_template_str = bpy.props.StringProperty(
