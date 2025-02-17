@@ -107,7 +107,7 @@ class SelectionPopup(bpy.types.Operator):
         return {'FINISHED'}
 
     @staticmethod
-    def close(x, y, delta=1.e-8):
+    def close(x: any, y: any, delta: float = 1.e-8) -> bool:
         """
         Check if vars `x` and `y` are within `delta` distance
         """
@@ -118,7 +118,7 @@ class SelectionPopup(bpy.types.Operator):
         return np.allclose(x, y, atol=delta)
 
     @staticmethod
-    def compare(x, y, comp_type):
+    def compare(x: any, y: any, comp_type: any) -> bool:
         """
         TODO
         """
@@ -134,7 +134,7 @@ class SelectionPopup(bpy.types.Operator):
             case '>=':
                 return x >= y
 
-    def invoke(self, context, _):
+    def invoke(self, context, event):
         """
         Invoke popup
         """
@@ -170,7 +170,7 @@ class EntityTemplateReader(bpy.types.Operator):
     bl_idname = 'json.read'
     bl_label = 'Read entity JSON'
 
-    def execute(self, _):
+    def execute(self, context):
         """
         Read entity template from JSON and initialize values for all scene objects
         """
@@ -199,7 +199,7 @@ class EntityTemplateReader(bpy.types.Operator):
         return {'FINISHED'}
 
     @staticmethod
-    def read_template_json():
+    def read_template_json() -> None:
         """
         Read json from scene var `entity_def_path` into scene var `entity_template_str` and global var `entity_template`
         """
@@ -270,7 +270,7 @@ class EntityImportWriter(bpy.types.Operator):
 # NOTE: Weird/unused function params come from API input requirements
 
 @persistent
-def init(file=None):
+def init(file=None) -> None:
     """
     Initialize global `entity_template` dict, search variables, and object entity definitions
     """
@@ -305,13 +305,13 @@ def init(file=None):
                 prop_class(**prop_params)
             )
 
-def reset_search_var(self=None, context=bpy.context):
+def reset_search_var(self=None, context=bpy.context) -> None:
     """
     Reset scene variable `search_var` to its default for switching `search_class_name`
     """
     context.scene.search_var = get_var_search_list()[0][0]
 
-def set_search_val(self=None, context=bpy.context):
+def set_search_val(self=None, context=bpy.context) -> None:
     """
     Set the scene `search_val` variable based on the scene variables 'search_class_name' `search_var`
     """
@@ -334,7 +334,7 @@ def set_search_val(self=None, context=bpy.context):
 
 # TODO: Add support for Vector2
 # TODO: Add support for Array
-def get_blender_prop(var_type: str, default: any = None) -> tuple:
+def get_blender_prop(var_type: str, default: any = None) -> tuple[callable, any]:
     """
     Get Blender `bpy.props` type object and a correctly-typed default
 
@@ -345,8 +345,8 @@ def get_blender_prop(var_type: str, default: any = None) -> tuple:
 
     Returns
     -------
-    `(prop_class, prop_default)`: A Blender `bpy.props` Property and
-    a correctly-typed default value
+    `(prop_class, prop_default)`: A Blender `bpy.props` Property function
+    and a correctly-typed default value
     """
     match(var_type):
         case 'int':
@@ -403,14 +403,14 @@ def get_blender_prop(var_type: str, default: any = None) -> tuple:
 
 #             self[var_name] = default
 
-def get_entity_list(self=None, context=None):
+def get_entity_list(self=None, context=None) -> list[tuple[str, str, str]]:
     """
     Get the keys from `entity_dict` in blender ENUM format
     """
     global entity_template
     return [(key, key, key) for key in entity_template.keys()]
 
-def get_var_search_list(self=None, context=bpy.context):
+def get_var_search_list(self=None, context=bpy.context) -> list[tuple[str, str, str]]:
     """
     Get the vars for `context.scene.search_class_name` in blender ENUM format
     """
@@ -418,7 +418,7 @@ def get_var_search_list(self=None, context=bpy.context):
     search_class = entity_template[context.scene.search_class_name]
     return [(key, key, key) for key in search_class.keys()]
 
-def free_object_variables(entity_template: dict):
+def free_object_variables(entity_template: dict) -> None:
     """
     Free entity JSON defined variables for switching entity template or unloading addon
     """
