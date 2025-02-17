@@ -118,9 +118,18 @@ class SelectionPopup(bpy.types.Operator):
         return np.allclose(x, y, atol=delta)
 
     @staticmethod
-    def compare(x: any, y: any, comp_type: any) -> bool:
+    def compare(x: any, y: any, comp_type: str) -> bool:
         """
-        TODO
+        Compares inputs `x` and `y` based on `comp_type`
+
+        parameters
+        ----------
+        `x`, `y`: Inputs to compare
+        `comp_type`: Method of comparison. Valid input: `'<', '<=', '==', '>', '>='`
+
+        returns
+        -------
+        `result`: result of `x` compared to `y` by `comp_type`
         """
         match (comp_type):
             case '<':
@@ -133,6 +142,8 @@ class SelectionPopup(bpy.types.Operator):
                 return x > y
             case '>=':
                 return x >= y
+            case '_':
+                return SelectionPopup.close(x, y)
 
     def invoke(self, context, event):
         """
