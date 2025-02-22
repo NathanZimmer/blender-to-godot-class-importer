@@ -35,7 +35,7 @@ class Test(bpy.types.Panel):
 
 
 # %% Entity Def Classes
-class PropertyList(bpy.types.PropertyGroup):
+class EntityProperty(bpy.types.PropertyGroup):
     """
     List for Godot entity variables defined by the entity template
     """
@@ -83,7 +83,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
     """
     Represents a Godot class with variables defined by the entity template
     """
-    properties: bpy.props.CollectionProperty(type=PropertyList)  # type: ignore
+    properties: bpy.props.CollectionProperty(type=EntityProperty)  # type: ignore
 
     def add(self, name: str, value: any) -> None:
         """
@@ -124,14 +124,14 @@ class EntityDefinition(bpy.types.PropertyGroup):
 # %% Blender API Setup
 def register():
     bpy.utils.register_class(Test)
-    bpy.utils.register_class(PropertyList)
+    bpy.utils.register_class(EntityProperty)
     bpy.utils.register_class(EntityDefinition)
 
     bpy.types.Object.ent_def = bpy.props.PointerProperty(type=EntityDefinition)
 
 def unregister():
     bpy.utils.unregister_class(Test)
-    bpy.utils.unregister_class(PropertyList)
+    bpy.utils.unregister_class(EntityProperty)
     bpy.utils.unregister_class(EntityDefinition)
 
 bl_info = {
