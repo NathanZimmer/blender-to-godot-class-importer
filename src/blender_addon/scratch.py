@@ -39,9 +39,13 @@ class BTGPanel(bpy.types.Panel):
         import_export_box.label(text=scene_props['entity_def_path'].name)
         import_export_box.prop(context.scene, 'entity_def_path', text='')
         import_export_box.operator('json.read')
-        # import_export_box.label(text=scene_props['btg_write_path'].name)
-        # import_export_box.prop(context.scene, 'btg_write_path', text='')
-        # import_export_box.operator('json.write')
+        import_export_box.label(text=scene_props['btg_write_path'].name)
+        import_export_box.prop(context.scene, 'btg_write_path', text='')
+        import_export_box.operator('json.write')
+
+        layout.label(text='Select Objects')
+        misc = layout.box()
+        misc.operator('select_popup.open')
 
         # Don't show properties if there is no object selected
         if active_object is None:
@@ -62,6 +66,128 @@ class BTGPanel(bpy.types.Panel):
         for property in active_object.class_definition:
             entity_box.label(text=f'{property.name} ({property.godot_type})')
             entity_box.prop(property, property.string_ref, text='')
+
+
+class SelectionPopup(bpy.types.Operator):
+    """
+    Search for objects in the scene based on class name or class variable value
+    """
+    bl_idname = "select_popup.open"
+    bl_label = "Find objects by..."
+
+    def execute(self, context):
+        """
+        Use search_ scene variables to select objects with the specified entity values
+        """
+        search_class = context.scene.search_class_name
+
+        if context.scene.search_type == 'var_val' and search_class != 'None':
+            search_var_name = context.scene.search_var_name
+            search_property = context.scene.search_property
+
+            if search_var_name == '':
+                self.report({'WARNING'}, 'No search variable selected.')
+                return {'CANCELLED'}
+
+            for object in context.scene.objects:
+                if object.class_name != search_class:
+                    continue
+
+                value = object.class_definition.get_properties()[search_var_name]['value']
+                object.select_set(
+                    object.class_name == search_class
+                    and SelectionPopup.compare(value, search_property.value, context.scene.comparison_type)
+                )
+        else:
+            for object in context.scene.objects:
+                object.select_set(object.class_name == search_class)
+
+        if len(context.selected_objects) > 0 and context.active_object not in context.selected_objects:
+            context.view_layer.objects.active = context.selected_objects[0]
+
+        if len(context.selected_objects) == 0:
+            self.report({'INFO'}, 'No objects found.')
+        else:
+            self.report({'INFO'}, 'Objects selected!')
+
+        return {'FINISHED'}
+
+    @staticmethod
+    def close(x: any, y: any, delta: float = 1.e-8) -> bool:
+        """
+        Check if vars `x` and `y` are within `delta` distance
+        """
+        # If string, do regular equality
+        if isinstance(x, str) or isinstance(y, str):
+            return x == y
+
+        return np.allclose(x, y, atol=delta)
+
+    @staticmethod
+    def compare(x: any, y: any, comp_type: str) -> bool:
+        """
+        Compares inputs `x` and `y` based on `comp_type`
+
+        parameters
+        ----------
+        `x`, `y`: Inputs to compare
+        `comp_type`: Method of comparison. Valid input: `'<', '<=', '==', '>', '>='`
+
+        returns
+        -------
+        `result`: result of `x` compared to `y` by `comp_type`
+        """
+        match (comp_type):
+            case '<':
+                return x < y
+            case '<=':
+                return x <= y
+            case '==':
+                return SelectionPopup.close(x, y)
+            case '>':
+                return x > y
+            case '>=':
+                return x >= y
+            case '_':
+                return SelectionPopup.close(x, y)
+
+    def invoke(self, context, event):
+        """
+        Invoke popup
+        """
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context):
+        """
+        Define the layout of the sub-panel
+        """
+        layout = self.layout
+
+        layout.label(text='Search by...')
+        layout.prop(context.scene, 'search_type', text='')
+
+        layout.label(text='Parameters')
+        box = layout.box()
+        box.prop(context.scene, 'search_class_name', text='')
+
+        if context.scene.search_class_name == 'None':
+            return
+
+        if context.scene.search_type == 'var_val':
+            box.prop(context.scene, 'search_var_name', text='')
+
+            search_property = context.scene.search_property
+            # Types that we want to show the expanded set of comparison options for
+            expanded_compare_types =  (
+                PropTypes.INT.value,
+                PropTypes.FLOAT.value,
+                PropTypes.FLOAT_VECTOR.value,
+                PropTypes.INT_VECTOR.value
+            )
+            if search_property.string_ref in expanded_compare_types:
+                box.prop(context.scene, 'comparison_type', text='')
+
+            box.prop(search_property, search_property.string_ref, text='')
 
 
 # %% Operator Classes
@@ -102,6 +228,52 @@ class EntityTemplateReader(bpy.types.Operator):
             bpy.context.scene.entity_template.reset({'None': ''} | json.load(entity_json))
 
 
+class EntityImportWriter(bpy.types.Operator):
+    """
+    Write BTG import JSON from entity defintions
+    """
+    bl_idname = 'json.write'
+    bl_label = 'Write BTG import JSON'
+
+    def execute(self, context):
+        """
+        Write entity definitions to Godot import JSON
+        """
+        json_types = (int, str, bool, float)  # Values that can be translated to JSON format
+
+        btg_json = {
+            # Convert to Godot naming standards
+            object.name.replace('.', '_'): {
+                'class': object.class_name,
+                'variables': {
+                    prop.name: {
+                        'type': prop.godot_type,
+                        'value': (
+                            prop.value if type(prop.value) in json_types
+                            else str(prop.value[0:])  # Convert non-JSON vartypes to string
+                        )
+                    }
+                    for prop in object.class_definition
+                }
+            }
+            for object in context.scene.objects if object.class_name != 'None'
+        }
+
+        try:
+            with open(context.scene.btg_write_path, 'w+') as file:
+                json.dump(btg_json, file)
+
+            self.report({'DEBUG'}, f'{btg_json=}')
+            self.report({'INFO'}, 'Wrote JSON!')
+            return {'FINISHED'}
+        except Exception:
+            self.report(
+                {'ERROR'}, f'Failed to write JSON file with exception:\n{traceback.format_exc()}'
+            )
+            return {'CANCELLED'}
+
+
+# %% Entity Classes
 class EntityTemplate(bpy.types.PropertyGroup):
     """
     Wrapper for entity template JSON file
@@ -140,18 +312,58 @@ class EntityTemplate(bpy.types.PropertyGroup):
         return key in self.template
 
 
-# %% Entity Def Classes
 class EntityProperty(bpy.types.PropertyGroup):
     """
     List for Godot entity variables
     """
-    def get_prop_enum_items(self, _) -> list[tuple[str, str, str]]:
+    def get_enum_items(self, _=None) -> list[tuple[str, str, str]]:
         """
         Return `self.mEnumItems` formatted for use with a Blender
         ENUM property
         """
         items = json.loads(self.mEnumItems)
         return [(str(val), str(val), str(val)) for val in items]
+
+    def init(
+        self,
+        name: str,
+        value: any,
+        type: str,
+        description: str = '',
+        items: list[str] = ''
+    ) -> None:
+        """
+        Initialize object
+        NOTE: Needs to be called manually because `__init__` is not called by the
+        Blender API
+        """
+        self.name = name
+        self.godot_type = type
+        self.description = description
+
+        match(type):
+            case 'bool':
+                self.mBool = value
+                self.mType = PropTypes.BOOL.value
+            case 'int':
+                self.mInt = value
+                self.mType = PropTypes.INT.value
+            case 'float':
+                self.mFloat = value
+                self.mType = PropTypes.FLOAT.value
+            case 'Vector3':
+                self.mFloatVector = value
+                self.mType = PropTypes.FLOAT_VECTOR.value
+            case 'Vector3i':
+                self.mIntVector = value
+                self.mType = PropTypes.INT_VECTOR.value
+            case 'enum':
+                self.mEnumItems = json.dumps(items)
+                self.mEnum = value
+                self.mType = PropTypes.ENUM.value
+            case _:
+                self.mString = value
+                self.mType = PropTypes.STRING.value
 
     @property
     def string_ref(self) -> str:
@@ -160,6 +372,14 @@ class EntityProperty(bpy.types.PropertyGroup):
         GUI displaying
         """
         return self.mType
+
+    @property
+    def value(self) -> any:
+        return self[self.mType]
+
+    @value.setter
+    def value(self, val: any) -> None:
+        self[self.mType] = val
 
     # Variable name and prop type
     name: bpy.props.StringProperty()  # type: ignore
@@ -185,8 +405,8 @@ class EntityProperty(bpy.types.PropertyGroup):
     mBool: bpy.props.BoolProperty(name='bool')  # type: ignore
     mIntVector: bpy.props.IntVectorProperty(name='Vector3i')  # type: ignore
     mFloatVector: bpy.props.FloatVectorProperty(name='Vector3')  # type: ignore
-    mEnum: bpy.props.EnumProperty(name='enum', items=get_prop_enum_items)  # type: ignore
-    mEnumItems: bpy.props.StringProperty()  # type: ignore
+    mEnum: bpy.props.EnumProperty(name='enum', items=get_enum_items)  # type: ignore
+    mEnumItems: bpy.props.StringProperty(default='{"None": ""}')  # type: ignore
 
 
 class EntityDefinition(bpy.types.PropertyGroup):
@@ -200,8 +420,8 @@ class EntityDefinition(bpy.types.PropertyGroup):
         name: str,
         value: any,
         type: str,
-        description: str,
-        items: list[str] = None
+        description: str = '',
+        items: list[str] = ''
     ) -> None:
         """
         Add variable to `self.properties`
@@ -214,33 +434,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
         `items`: the items for an ENUM property
         """
         prop = self.properties.add()
-        prop.name = name
-        prop.godot_type = type
-        prop.description = description
-
-        match(type):
-            case 'bool':
-                prop.mBool = value
-                prop.mType = PropTypes.BOOL.value
-            case 'int':
-                prop.mInt = value
-                prop.mType = PropTypes.INT.value
-            case 'float':
-                prop.mFloat = value
-                prop.mType = PropTypes.FLOAT.value
-            case 'Vector3':
-                prop.mFloatVector = value
-                prop.mType = PropTypes.FLOAT_VECTOR.value
-            case 'Vector3i':
-                prop.mIntVector = value
-                prop.mType = PropTypes.INT_VECTOR.value
-            case 'enum':
-                prop.mEnumItems = json.dumps(items)
-                prop.mEnum = value
-                prop.mType = PropTypes.ENUM.value
-            case _:
-                prop.mString = value
-                prop.mType = PropTypes.STRING.value
+        prop.init(name, value, type, description, items)
 
     def clear(self) -> None:
         """
@@ -260,9 +454,9 @@ class EntityDefinition(bpy.types.PropertyGroup):
         return {
             prop.name: {
                 'type': prop.godot_type,
-                'value': prop[prop.string_ref],
+                'value': prop.value,
                 'description': prop.description,
-                'items': '' if prop.mEnumItems == '' else json.loads(prop.mEnumItems)
+                'items': prop.get_enum_items(),
             }
             for prop in self.properties
         }
@@ -321,11 +515,42 @@ def refresh_class_definitions():
         # Reset to backup in-case class definition order has changed
         object.class_name = object.class_name_backup
         # Reset any common vars between previous and current template iterations
-        for property in object.class_definition:
-            name = property.name
-            type = property.godot_type
+        for prop in object.class_definition:
+            name = prop.name
+            type = prop.godot_type
             if name in old_props and type == old_props[name]['type']:
-                property[property.string_ref] = old_props[name]['value']
+                prop.value = old_props[name]['value']
+
+def set_search_property(self, context) -> None:
+    """
+    TODO
+    """
+    class_name = context.scene.search_class_name
+    var_name = context.scene.search_var_name
+    var_type, var_val, var_desc, var_items = context.scene.entity_template[class_name][var_name]
+
+    context.scene.compare_type = '=='
+
+    context.scene.search_property.init(
+        name=var_name,
+        type=var_type,
+        value=var_val,
+        description=var_desc,
+        items=var_items,
+    )
+
+def get_variable_search_list(self, context) -> list[tuple[str, str, str]]:
+    """
+    Get the keys for `context.scene.search_class_name` in blender ENUM format
+    """
+    search_class = context.scene.entity_template[context.scene.search_class_name]
+    return [(key, key, key) for key in search_class.keys()]
+
+def get_entity_list(self, context) -> list[tuple[str, str, str]]:
+    """
+    Get the keys for `context.object.class_name` in blender ENUM format
+    """
+    return [(key, key, key) for key in context.scene.entity_template.keys()]
 
 @persistent
 def load_template(file=None) -> None:
@@ -334,17 +559,12 @@ def load_template(file=None) -> None:
     """
     bpy.context.scene.entity_template.init_dict()
 
-def get_entity_list(self, context) -> list[tuple[str, str, str]]:
-    """
-    Get the keys for `context.object.class_name` in blender ENUM format
-    """
-    return [(key, key, key) for key in context.scene.entity_template.keys()]
-
 # %% Blender API Setup
 def register():
     bpy.utils.register_class(BTGPanel)
+    bpy.utils.register_class(SelectionPopup)
     bpy.utils.register_class(EntityTemplateReader)
-    # bpy.utils.register_class(EntityImportWriter)
+    bpy.utils.register_class(EntityImportWriter)
     bpy.utils.register_class(EntityTemplate)
     bpy.utils.register_class(EntityProperty)
     bpy.utils.register_class(EntityDefinition)
@@ -381,10 +601,47 @@ def register():
     bpy.types.Object.class_definition = bpy.props.PointerProperty(type=EntityDefinition)
     bpy.types.Scene.entity_template = bpy.props.PointerProperty(type=EntityTemplate)
 
+    # Property searching
+    bpy.types.Scene.search_class_name = bpy.props.EnumProperty(
+        name='Godot Entities',
+        description='The Godot class to search for',
+        items=get_entity_list,
+        update=set_search_property,
+        default=0,
+    )
+    bpy.types.Scene.search_type = bpy.props.EnumProperty(
+        items=[
+            ('class', 'Class name', 'Select all objects of this class'),
+            ('var_val', 'Variable value', 'Select all objects with this variable value')
+        ],
+        description='Search type',
+        default=0,
+    )
+    bpy.types.Scene.comparison_type = bpy.props.EnumProperty(
+        items=[
+            ('<', '<', 'less than'),
+            ('<=', '<=', 'less than or equal to'),
+            ('==', '==', 'equal to'),
+            ('>', '>', 'greater than'),
+            ('>=', '>=', 'greater than or equal to'),
+
+        ],
+        description='Type of evaluation to use',
+        default='==',
+    )
+    bpy.types.Scene.search_var_name = bpy.props.EnumProperty(
+        name='Godot Entity variables',
+        description='Variable to search for',
+        items=get_variable_search_list,
+        update=set_search_property,
+        default=0,
+    )
+    bpy.types.Scene.search_property = bpy.props.PointerProperty(type=EntityProperty)
+
 def unregister():
     bpy.utils.unregister_class(BTGPanel)
     bpy.utils.unregister_class(EntityTemplateReader)
-    # bpy.utils.unregister_class(EntityImportWriter)
+    bpy.utils.unregister_class(EntityImportWriter)
     bpy.utils.register_class(EntityTemplate)
     bpy.utils.unregister_class(EntityProperty)
     bpy.utils.unregister_class(EntityDefinition)
