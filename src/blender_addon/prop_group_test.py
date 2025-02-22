@@ -1,7 +1,5 @@
 import bpy
-from bpy.app.handlers import persistent
 import json
-import traceback
 from mathutils import Vector
 import enum
 
@@ -31,9 +29,9 @@ class Test(bpy.types.Panel):
         layout = self.layout
 
         layout.label(text='Test')
-        for prop in context.active_object.ent_def.mProperties:
-            layout.label(text=prop.mName)
-            layout.prop(prop, prop.mType, text='')
+        for prop in context.active_object.ent_def.properties:
+            layout.label(text=prop.name)
+            layout.prop(prop, prop.var_string, text='')
 
 
 # %% Entity Def Classes
@@ -41,16 +39,23 @@ class PropertyList(bpy.types.PropertyGroup):
     """
     List for Godot entity variables defined by the entity template
     """
-    def get_prop_enum_items(self, _):
+    def get_prop_enum_items(self, _) -> list[tuple[str, str, str]]:
         """
         Return `self.mEnumItems` formatted for use with a Blender
         ENUM property
         """
         items = json.loads(self.mEnumItems)
-        return [(val, val, val) for val in items]
+        return [(str(val), str(val), str(val)) for val in items]
+
+    @property
+    def var_string(self) -> str:
+        """
+        TODO
+        """
+        return self.mType
 
     # Variable name and prop type
-    mName: bpy.props.StringProperty()  # type: ignore
+    name: bpy.props.StringProperty()  # type: ignore
     mType: bpy.props.EnumProperty(
         items=[
             ('mInt', 'mInt', 'mInt'),
@@ -78,15 +83,19 @@ class EntityDefinition(bpy.types.PropertyGroup):
     """
     Represents a Godot class with variables defined by the entity template
     """
-    mProperties: bpy.props.CollectionProperty(type=PropertyList)  # type: ignore
+    properties: bpy.props.CollectionProperty(type=PropertyList)  # type: ignore
 
-    def add(self, name: str, value: any):
+    def add(self, name: str, value: any) -> None:
         """
-        TODO
-        NOTE: Does not check if prop already exists with this name
+        Add var to `properties`
+
+        Parameters
+        ----------
+        `name`: The Godot variable name
+        `value`: The Godot variable value
         """
-        prop = self.mProperties.add()
-        prop.mName = name
+        prop = self.properties.add()
+        prop.name = name
 
         prop_type = type(value)
         if prop_type == bool:
