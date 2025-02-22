@@ -6,12 +6,13 @@ from mathutils import Vector
 import enum
 
 class PropTypes(enum.Enum):
-    INT = 0
-    FLOAT = 1
-    STRING = 2
-    BOOL = 3
-    INT_VECTOR = 4
-    FLOAT_VECTOR = 5
+    INT = 'mInt'
+    FLOAT = 'mFloat'
+    STRING = 'mString'
+    BOOL = 'mBool'
+    INT_VECTOR = 'mIntVector'
+    FLOAT_VECTOR = 'mFloatVector'
+    ENUM = 'mEnum'
 
 # %% GUI Class
 class Test(bpy.types.Panel):
@@ -30,19 +31,37 @@ class Test(bpy.types.Panel):
         layout = self.layout
 
         layout.label(text='Test')
-        for prop in context.scene.ent_def.mProperties:
+        for prop in context.active_object.ent_def.mProperties:
             layout.label(text=prop.mName)
-            layout.prop(prop, EntityDefinition.prop_indices[prop.mType], text='')
+            layout.prop(prop, prop.mType, text='')
 
 
 # %% Entity Def Classes
 class PropertyList(bpy.types.PropertyGroup):
     """
-    TODO
+    List for Godot entity variables defined by the entity template
     """
-    # Variable name from entity template and blender prop type
+    def get_prop_enum_items(self, _):
+        """
+        Return `self.mEnumItems` formatted for use with a Blender
+        ENUM property
+        """
+        items = json.loads(self.mEnumItems)
+        return [(val, val, val) for val in items]
+
+    # Variable name and prop type
     mName: bpy.props.StringProperty()  # type: ignore
-    mType: bpy.props.IntProperty()  # type: ignore
+    mType: bpy.props.EnumProperty(
+        items=[
+            ('mInt', 'mInt', 'mInt'),
+            ('mFloat', 'mFloat', 'mFloat'),
+            ('mString', 'mString', 'mString'),
+            ('mBool', 'mBool', 'mBool'),
+            ('mIntVector', 'mIntVector', 'mIntVector'),
+            ('mFloatVector', 'mFloatVector', 'mFloatVector'),
+            ('mEnum', 'mEnum', 'mEnum'),
+        ]
+    )  # type: ignore
 
     # Supported value types
     mInt: bpy.props.IntProperty()  # type: ignore
@@ -51,35 +70,23 @@ class PropertyList(bpy.types.PropertyGroup):
     mBool: bpy.props.BoolProperty()  # type: ignore
     mIntVector: bpy.props.IntVectorProperty()  # type: ignore
     mFloatVector: bpy.props.FloatVectorProperty()  # type: ignore
-    # mEnum: bpy.props.EnumProperty()  # type: ignore  TODO
+    mEnum: bpy.props.EnumProperty(items=get_prop_enum_items)  # type: ignore
+    mEnumItems: bpy.props.StringProperty()  # type: ignore
 
 
 class EntityDefinition(bpy.types.PropertyGroup):
     """
-    TODO
+    Represents a Godot class with variables defined by the entity template
     """
-    prop_indices = ['mInt', 'mFloat', 'mString', 'mBool', 'mIntVector', 'mFloatVector']
     mProperties: bpy.props.CollectionProperty(type=PropertyList)  # type: ignore
 
-    def clear(self):
-        self.mProperties.clear()
-
-    def __getitem__(self, key):
-        # TODO: remove for-loop
-        for prop in self.mProperties:
-            if prop.mName == key:
-                return prop[self.prop_indices[prop.mType]]
-
-
-    def __setitem__(self, key, value):
-        # TODO: remove for-loop
-        for existing_prop in self.mProperties:
-            if existing_prop.mName == key:
-                prop = existing_prop
-                break
-        else:
-            prop = self.mProperties.add()
-            prop.mName = key
+    def add(self, name: str, value: any):
+        """
+        TODO
+        NOTE: Does not check if prop already exists with this name
+        """
+        prop = self.mProperties.add()
+        prop.mName = name
 
         prop_type = type(value)
         if prop_type == bool:
@@ -91,17 +98,19 @@ class EntityDefinition(bpy.types.PropertyGroup):
         elif prop_type == float:
             prop.mFloat = value
             prop.mType = PropTypes.FLOAT.value
-        elif prop_type in (tuple, list, Vector):
+        elif prop_type in (tuple, Vector):
             if all([type(idx) == int for idx in value]):
                 prop.mIntVector = value
                 prop.mType = PropTypes.INT_VECTOR.value
             else:
                 prop.mFloatVector = value
                 prop.mType = PropTypes.FLOAT_VECTOR.value
+        elif prop_type == list:
+            prop.mEnumItems = json.dumps(value)
+            prop.mType = PropTypes.ENUM.value
         else:
             prop.mString = value
             prop.mType = PropTypes.STRING.value
-
 
 # %% Blender API Setup
 def register():
@@ -109,7 +118,7 @@ def register():
     bpy.utils.register_class(PropertyList)
     bpy.utils.register_class(EntityDefinition)
 
-    bpy.types.Scene.ent_def = bpy.props.PointerProperty(type=EntityDefinition)
+    bpy.types.Object.ent_def = bpy.props.PointerProperty(type=EntityDefinition)
 
 def unregister():
     bpy.utils.unregister_class(Test)
@@ -124,4 +133,3 @@ bl_info = {
 
 if __name__ == '__main__':
     register()
-# %%
