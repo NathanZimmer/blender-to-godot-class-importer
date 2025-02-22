@@ -448,8 +448,8 @@ class EntityDefinition(bpy.types.PropertyGroup):
 
         Returns
         -------
-        `props`: dictionary with `prop.name` as key and `'type', 'value', 'description', 'items'`
-        as sub-dictionary keys
+        `props`: dictionary with `prop.name` as key and
+        `'type', 'value', 'description', 'items'` as sub-dictionary keys
         """
         return {
             prop.name: {
@@ -466,9 +466,10 @@ class EntityDefinition(bpy.types.PropertyGroup):
 
 
 # %% Utility Functions
-def init(self, context) -> None:
+def reset_class_definition(self, context) -> None:
     """
-    Update object variables for new `self.class_name`
+    Reset `self.class_definition` and populate with new variables
+    from new `self.class_name`
     """
     self.class_definition.clear()
     self.class_name_backup = self.class_name
@@ -489,7 +490,7 @@ def init(self, context) -> None:
             items=var_items
         )
 
-def refresh_class_definitions():
+def refresh_class_definitions() -> None:
     """
     Compare `object.class_definition` values to `scene.entity_template`.
     Check if:
@@ -590,7 +591,7 @@ def register():
     # Entity definition
     bpy.types.Object.class_name = bpy.props.EnumProperty(
         items=get_entity_list,
-        update=init,
+        update=reset_class_definition,
         description='The Godot class of this object',
         default=0,
     )
