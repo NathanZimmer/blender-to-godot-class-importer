@@ -383,6 +383,7 @@ class EntityProperty(bpy.types.PropertyGroup):
 
     # Variable name and prop type
     name: bpy.props.StringProperty()  # type: ignore
+    # TODO: Find a way to override the tooltip to show each property's desc
     description: bpy.props.StringProperty()  # type: ignore
     godot_type: bpy.props.StringProperty()  # type: ignore
 
