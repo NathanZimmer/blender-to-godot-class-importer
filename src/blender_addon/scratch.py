@@ -15,7 +15,6 @@ class PropTypes(enum.Enum):
     FLOAT_VECTOR = 'mFloatVector'
     ENUM = 'mEnum'
 
-entity_template = {'None': ''}
 
 # %% GUI Classes
 class BTGPanel(bpy.types.Panel):
@@ -58,7 +57,7 @@ class BTGPanel(bpy.types.Panel):
         if class_name in ('None', ''):
             return
 
-        for property in getattr(bpy.context.active_object, class_name).properties:
+        for property in active_object.class_definition:
             entity_box.label(text=property.name)
             entity_box.prop(property, property.var_string, text='')
 
@@ -76,16 +75,6 @@ class EntityTemplateReader(bpy.types.Operator):
         """
         Read entity template from JSON and initialize values for all scene objects
         """
-        # Putting this in a try-catch to prevent users from locking themselves out of loading
-        # a new JSON
-        global entity_template
-        try:
-            # Free variables from old def JSON
-            del_class_defs()
-            pass
-        except:
-            self.report({'ERROR'}, 'Could not free variables')
-
         try:
             self.read_template_json()
         except Exception:
@@ -94,10 +83,10 @@ class EntityTemplateReader(bpy.types.Operator):
             )
             return {'CANCELLED'}
 
-        # Reinitialize after loading new entity template
-        init()
+        # Clear old defs from objects
+        clear_all_classes()
 
-        self.report({'DEBUG'}, f'{entity_template=}')
+        self.report({'DEBUG'}, f'{context.scene.entity_template=}')
         self.report({'INFO'}, 'Loaded JSON!')
         return {'FINISHED'}
 
@@ -107,21 +96,50 @@ class EntityTemplateReader(bpy.types.Operator):
         Read json from scene var `entity_def_path` into scene var `entity_template_str`
         and global var `entity_template`
         """
-        with open(bpy.context.scene.entity_def_path) as file:
+        with open(bpy.context.scene.entity_def_path) as entity_json:
             # Place 'None' at the first index for defaulting
-            global entity_template
-            entity_template = {'None': ''}
-            entity_template |= json.load(file)
+            bpy.context.scene.entity_template.reset({'None': ''} | json.load(entity_json))
 
-            # NOTE: Blender cannot store dict type objects, so this is a workaround
-            # to preserve the dict between blender sessions.
-            bpy.context.scene.entity_template_str = json.dumps(entity_template)
+
+class EntityTemplate(bpy.types.PropertyGroup):
+    """
+    Wrapper for entity template JSON file
+    """
+    template = {'None': ''}
+    template_str: bpy.props.StringProperty(default='{"None": ""}')  # type: ignore
+
+    def init_dict(self) -> None:
+        """
+        Repopulate template dict after Blender restart
+        """
+        self.template.clear()
+        self.template |= json.loads(self.template_str)
+
+    def reset(self, template: dict) -> None:
+        """
+        Reset this object with a new template JSON
+        """
+        self.template.clear()
+        self.template |= template
+
+        # NOTE: Blender cannot store dict type objects, so this is a workaround
+        # to preserve the dict between blender sessions.
+        self.template_str = json.dumps(template)
+
+    def keys(self) -> None:
+        return self.template.keys()
+
+    def items(self) -> None:
+        return self.template.items()
+
+    def __getitem__(self, key) -> any:
+        return self.template[key]
 
 
 # %% Entity Def Classes
 class EntityProperty(bpy.types.PropertyGroup):
     """
-    List for Godot entity variables defined by the entity template
+    List for Godot entity variables
     """
     def get_prop_enum_items(self, _) -> list[tuple[str, str, str]]:
         """
@@ -134,7 +152,7 @@ class EntityProperty(bpy.types.PropertyGroup):
     @property
     def var_string(self) -> str:
         """
-        TODO
+        Return string rep of this object's property
         """
         return self.mType
 
@@ -176,7 +194,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str,
-        items: str = None
+        items: list[str] = None
     ) -> None:
         """
         Add variable to `self.properties`
@@ -185,8 +203,8 @@ class EntityDefinition(bpy.types.PropertyGroup):
         ----------
         `name`: The Godot variable name
         `value`: The Godot variable value
-        `type`: TODO
-        `items`: TODO
+        `type`: The Godot type of the variable.
+        `items`: the items for an ENUM property
         """
         prop = self.properties.add()
         prop.name = name
@@ -216,111 +234,71 @@ class EntityDefinition(bpy.types.PropertyGroup):
                 prop.mString = value
                 prop.mType = PropTypes.STRING.value
 
+    def clear(self) -> None:
+        """
+        Clears this entity
+        """
+        self.properties.clear()
+
+    def __iter__(self):
+        return self.properties.__iter__()
+
+
 # %% Utility Functions
-def init():
+def init(self, context) -> None:
     """
-    Called when a new entity template is read
+    Update object variables for new `self.class_name`
     """
-    global entity_template
+    self.class_definition.clear()
 
-    for class_name, class_def in entity_template.items():
-        if class_name == 'None':
-            continue
+    if self.class_name == 'None':
+        return
 
-        setattr(
-            bpy.types.Object,
-            class_name,
-            bpy.props.PointerProperty(type=EntityDefinition)
+    class_def = context.scene.entity_template[self.class_name]
+
+    for var_name, var_def in class_def.items():
+        var_type, var_default, var_desc, var_items = var_def
+
+        self.class_definition.add(
+            name=var_name,
+            type=var_type,
+            value=var_default,
+            description=var_desc,
+            items=var_items
         )
-        # Setup each object in the scene
-        for object in bpy.context.scene.objects:
-            entity_def = getattr(
-                object,
-                class_name,
-            )
-            for var_name, var_def in class_def.items():
-                var_type, var_default, var_desc, var_items = var_def
 
-                entity_def.add(
-                    name=var_name,
-                    type=var_type,
-                    value=var_default,
-                    description=var_desc,
-                    items=var_items
-                )
-
-            object.instantiated = True
-
-def init_new(scene) -> None:
+def clear_all_classes():
     """
-    TODO
+    Clear `class_definition` for each object in the scene
     """
-    for object in scene.objects:
-        if not object.instantiated:
-            for class_name, class_def in entity_template.items():
-                if class_name == 'None':
-                    continue
-
-                entity_def = getattr(
-                    object,
-                    class_name,
-                )
-                for var_name, var_def in class_def.items():
-                    var_type, var_default, var_desc, var_items = var_def
-
-                    entity_def.add(
-                        name=var_name,
-                        type=var_type,
-                        value=var_default,
-                        description=var_desc,
-                        items=var_items
-                    )
-            object.instantiated = True
-
-def del_class_defs():
-    """
-    TODO
-    """
-    global entity_template
-    for class_name in entity_template.keys():
-        if class_name == 'None':
-            continue
-        for object in bpy.context.scene.objects:
-            entity_def = getattr(
-                    object,
-                    class_name,
-                )
-            entity_def.properties.clear()
-
-        delattr(bpy.types.Object, class_name)
+    for object in bpy.context.scene.objects:
+        object.class_name = 'None'
+        object.class_definition.clear()
 
 @persistent
-def load_template_from_string(file=None) -> None:
+def load_template(file=None) -> None:
     """
-    TODO
+    Load entity template at the start of each session
     """
-    global entity_template
-    entity_template = json.loads(bpy.context.scene.entity_template_str)
+    bpy.context.scene.entity_template.init_dict()
 
-def get_entity_list(self=None, context=None) -> list[tuple[str, str, str]]:
+def get_entity_list(self, context) -> list[tuple[str, str, str]]:
     """
     Get the keys for `context.object.class_name` in blender ENUM format
     """
-    global entity_template
-    return [(key, key, key) for key in entity_template.keys()]
+    return [(key, key, key) for key in context.scene.entity_template.keys()]
 
 # %% Blender API Setup
 def register():
     bpy.utils.register_class(BTGPanel)
     bpy.utils.register_class(EntityTemplateReader)
     # bpy.utils.register_class(EntityImportWriter)
+    bpy.utils.register_class(EntityTemplate)
     bpy.utils.register_class(EntityProperty)
     bpy.utils.register_class(EntityDefinition)
 
-    if not load_template_from_string in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.append(load_template_from_string)
-    if not init_new in bpy.app.handlers.depsgraph_update_post:
-        bpy.app.handlers.depsgraph_update_post.append(init_new)
+    if not load_template in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(load_template)
 
     # File IO
     bpy.types.Scene.entity_def_path = bpy.props.StringProperty(
@@ -339,32 +317,23 @@ def register():
 
     # Entity definition
     bpy.types.Object.class_name = bpy.props.EnumProperty(
-        name='Godot Entities',
-        description='ENUM for each object\'s class selection',
         items=get_entity_list,
+        update=init,
         default=0,
     )
-    bpy.types.Object.instantiated = bpy.props.BoolProperty(default=False)
-    bpy.types.Scene.entity_template_str = bpy.props.StringProperty(
-        name='Godot Entity JSON',
-        description=(
-            'Stores the entity definition for use between blender sessions. This is'
-            'only read from on startup and only written to when a new def is loaded'
-        ),
-        default='{"None": ""}',
-    )
+    bpy.types.Object.class_definition = bpy.props.PointerProperty(type=EntityDefinition)
+    bpy.types.Scene.entity_template = bpy.props.PointerProperty(type=EntityTemplate)
 
 def unregister():
     bpy.utils.unregister_class(BTGPanel)
     bpy.utils.unregister_class(EntityTemplateReader)
     # bpy.utils.unregister_class(EntityImportWriter)
+    bpy.utils.register_class(EntityTemplate)
     bpy.utils.unregister_class(EntityProperty)
     bpy.utils.unregister_class(EntityDefinition)
 
-    if load_template_from_string in bpy.app.handlers.load_post:
-        bpy.app.handlers.load_post.remove(load_template_from_string)
-    if init_new in bpy.app.handlers.depsgraph_update_post:
-        bpy.app.handlers.depsgraph_update_post.remove(init_new)
+    if load_template in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(load_template)
 
     # TODO: del variables
 
