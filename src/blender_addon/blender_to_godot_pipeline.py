@@ -408,6 +408,8 @@ def free_object_variables(entity_template: dict) -> None:
         if class_name == 'None':
             continue
 
+        # FIXME: This might not be freeing anything,
+        # might need to be f'{class_name}_{var_name}'
         for var_name in class_def.keys():
             delattr(bpy.types.Object, var_name)
 
