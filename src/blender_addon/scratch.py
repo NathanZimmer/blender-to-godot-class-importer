@@ -53,14 +53,15 @@ class BTGPanel(bpy.types.Panel):
         entity_box.label(text='Godot Class')
         entity_box.prop(active_object, 'class_name', text='')
 
+        # Don't show properties if there are none
         class_name = active_object.class_name
         if class_name in ('None', ''):
             return
 
+        # Display class properties
         for property in active_object.class_definition:
-            entity_box.label(text=property.name)
-            entity_box.prop(property, property.var_string, text='')
-
+            entity_box.label(text=f'{property.name} ({property.godot_type})')
+            entity_box.prop(property, property.string_ref, text='')
 
 
 # %% Operator Classes
@@ -83,8 +84,8 @@ class EntityTemplateReader(bpy.types.Operator):
             )
             return {'CANCELLED'}
 
-        # Clear old defs from objects
-        clear_all_classes()
+        # Clear old defs and refresh updated defs
+        refresh_class_definitions()
 
         self.report({'DEBUG'}, f'{context.scene.entity_template=}')
         self.report({'INFO'}, 'Loaded JSON!')
@@ -105,7 +106,7 @@ class EntityTemplate(bpy.types.PropertyGroup):
     """
     Wrapper for entity template JSON file
     """
-    template = {'None': ''}
+    template = {}
     template_str: bpy.props.StringProperty(default='{"None": ""}')  # type: ignore
 
     def init_dict(self) -> None:
@@ -135,6 +136,9 @@ class EntityTemplate(bpy.types.PropertyGroup):
     def __getitem__(self, key) -> any:
         return self.template[key]
 
+    def __contains__(self, key):
+        return key in self.template
+
 
 # %% Entity Def Classes
 class EntityProperty(bpy.types.PropertyGroup):
@@ -150,15 +154,18 @@ class EntityProperty(bpy.types.PropertyGroup):
         return [(str(val), str(val), str(val)) for val in items]
 
     @property
-    def var_string(self) -> str:
+    def string_ref(self) -> str:
         """
-        Return string rep of this object's property
+        Return string name of this property's value for `layout.prop`
+        GUI displaying
         """
         return self.mType
 
     # Variable name and prop type
     name: bpy.props.StringProperty()  # type: ignore
     description: bpy.props.StringProperty()  # type: ignore
+    godot_type: bpy.props.StringProperty()  # type: ignore
+
     mType: bpy.props.EnumProperty(
         items=[
             ('mInt', 'mInt', 'mInt'),
@@ -172,13 +179,13 @@ class EntityProperty(bpy.types.PropertyGroup):
     )  # type: ignore
 
     # Supported value types
-    mInt: bpy.props.IntProperty()  # type: ignore
-    mFloat: bpy.props.FloatProperty()  # type: ignore
-    mString: bpy.props.StringProperty()  # type: ignore
-    mBool: bpy.props.BoolProperty()  # type: ignore
-    mIntVector: bpy.props.IntVectorProperty()  # type: ignore
-    mFloatVector: bpy.props.FloatVectorProperty()  # type: ignore
-    mEnum: bpy.props.EnumProperty(items=get_prop_enum_items)  # type: ignore
+    mInt: bpy.props.IntProperty(name='int')  # type: ignore
+    mFloat: bpy.props.FloatProperty(name='float')  # type: ignore
+    mString: bpy.props.StringProperty(name='string')  # type: ignore
+    mBool: bpy.props.BoolProperty(name='bool')  # type: ignore
+    mIntVector: bpy.props.IntVectorProperty(name='Vector3i')  # type: ignore
+    mFloatVector: bpy.props.FloatVectorProperty(name='Vector3')  # type: ignore
+    mEnum: bpy.props.EnumProperty(name='enum', items=get_prop_enum_items)  # type: ignore
     mEnumItems: bpy.props.StringProperty()  # type: ignore
 
 
@@ -208,6 +215,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
         """
         prop = self.properties.add()
         prop.name = name
+        prop.godot_type = type
         prop.description = description
 
         match(type):
@@ -240,6 +248,25 @@ class EntityDefinition(bpy.types.PropertyGroup):
         """
         self.properties.clear()
 
+    def get_properties(self) -> dict:
+        """
+        Get dictionary representation of this object's properties
+
+        Returns
+        -------
+        `props`: dictionary with `prop.name` as key and `'type', 'value', 'description', 'items'`
+        as sub-dictionary keys
+        """
+        return {
+            prop.name: {
+                'type': prop.godot_type,
+                'value': prop[prop.string_ref],
+                'description': prop.description,
+                'items': '' if prop.mEnumItems == '' else json.loads(prop.mEnumItems)
+            }
+            for prop in self.properties
+        }
+
     def __iter__(self):
         return self.properties.__iter__()
 
@@ -250,6 +277,7 @@ def init(self, context) -> None:
     Update object variables for new `self.class_name`
     """
     self.class_definition.clear()
+    self.class_name_backup = self.class_name
 
     if self.class_name == 'None':
         return
@@ -267,13 +295,37 @@ def init(self, context) -> None:
             items=var_items
         )
 
-def clear_all_classes():
+def refresh_class_definitions():
     """
-    Clear `class_definition` for each object in the scene
+    Compare `object.class_definition` values to `scene.entity_template`.
+    Check if:
+    * class was removed
+    * class order was changed
+    * class variables were reordered/changed
     """
+    scene = bpy.context.scene
+
     for object in bpy.context.scene.objects:
-        object.class_name = 'None'
-        object.class_definition.clear()
+        # If object is None, it has no vars to clear
+        if object.class_name == 'None':
+            continue
+
+        # If class was removed from template, clear its definition
+        if object.class_name_backup not in scene.entity_template:
+            object.class_name = 'None'
+            object.class_definition.clear()
+            continue
+
+        # If class def was updated, re-assign values from previous def
+        old_props = object.class_definition.get_properties()
+        # Reset to backup in-case class definition order has changed
+        object.class_name = object.class_name_backup
+        # Reset any common vars between previous and current template iterations
+        for property in object.class_definition:
+            name = property.name
+            type = property.godot_type
+            if name in old_props and type == old_props[name]['type']:
+                property[property.string_ref] = old_props[name]['value']
 
 @persistent
 def load_template(file=None) -> None:
@@ -319,8 +371,13 @@ def register():
     bpy.types.Object.class_name = bpy.props.EnumProperty(
         items=get_entity_list,
         update=init,
+        description='The Godot class of this object',
         default=0,
     )
+    # Stores the class_name as a string rather than an index in the enum.
+    # This is used when the enum is updated and we need to check if the class
+    # order has changed.
+    bpy.types.Object.class_name_backup = bpy.props.StringProperty()
     bpy.types.Object.class_definition = bpy.props.PointerProperty(type=EntityDefinition)
     bpy.types.Scene.entity_template = bpy.props.PointerProperty(type=EntityTemplate)
 
