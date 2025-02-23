@@ -2,7 +2,6 @@ import bpy
 from bpy.app.handlers import persistent
 import json
 import traceback
-from mathutils import Vector
 import numpy as np
 import enum
 
@@ -34,6 +33,7 @@ class BTGPanel(bpy.types.Panel):
         active_object = context.active_object
         scene_props = context.scene.bl_rna.properties
 
+        # Import and export UI
         layout.label(text='Import and Export')
         import_export_box = layout.box()
         import_export_box.label(text=scene_props['entity_def_path'].name)
@@ -43,6 +43,7 @@ class BTGPanel(bpy.types.Panel):
         import_export_box.prop(context.scene, 'btg_write_path', text='')
         import_export_box.operator('json.write')
 
+        # Search UI
         layout.label(text='Select Objects')
         misc = layout.box()
         misc.operator('select_popup.open')
@@ -51,17 +52,15 @@ class BTGPanel(bpy.types.Panel):
         if active_object is None:
             return
 
+        # Entity properties GUI
         layout.label(text='Entity Properties')
         entity_box = layout.box()
-
         entity_box.label(text='Godot Class')
         entity_box.prop(active_object, 'class_name', text='')
-
         # Don't show properties if there are none
         class_name = active_object.class_name
         if class_name in ('None', ''):
             return
-
         # Display class properties
         for property in active_object.class_definition:
             entity_box.label(text=f'{property.name} ({property.godot_type})')
@@ -81,6 +80,7 @@ class SelectionPopup(bpy.types.Operator):
         """
         search_class = context.scene.search_class_name
 
+        # Search for matching vars
         if context.scene.search_type == 'var_val' and search_class != 'None':
             search_var_name = context.scene.search_var_name
             search_property = context.scene.search_property
@@ -98,6 +98,7 @@ class SelectionPopup(bpy.types.Operator):
                     object.class_name == search_class
                     and SelectionPopup.compare(value, search_property.value, context.scene.comparison_type)
                 )
+        # Search for matching classes
         else:
             for object in context.scene.objects:
                 object.select_set(object.class_name == search_class)
@@ -220,8 +221,7 @@ class EntityTemplateReader(bpy.types.Operator):
     @staticmethod
     def read_template_json() -> None:
         """
-        Read json from scene var `entity_def_path` into scene var `entity_template_str`
-        and global var `entity_template`
+        Read json from `scene.entity_def_path` into `scene.entity_template`
         """
         with open(bpy.context.scene.entity_def_path) as entity_json:
             # Place 'None' at the first index for defaulting
@@ -272,7 +272,6 @@ class EntityImportWriter(bpy.types.Operator):
             )
             return {'CANCELLED'}
 
-
 # %% Entity Classes
 class EntityTemplate(bpy.types.PropertyGroup):
     """
@@ -283,7 +282,7 @@ class EntityTemplate(bpy.types.PropertyGroup):
 
     def init_dict(self) -> None:
         """
-        Repopulate template dict after Blender restart
+        Repopulate template dict from string after Blender restart
         """
         self.template.clear()
         self.template |= json.loads(self.template_str)
@@ -336,6 +335,19 @@ class EntityProperty(bpy.types.PropertyGroup):
         Initialize object
         NOTE: Needs to be called manually because `__init__` is not called by the
         Blender API
+
+        Parameters
+        ----------
+        `name`: Name of the corresponding Godot variable
+
+        `value`: Value of the corresponding Godot variable
+
+        `type`: Godot type of the corresponding variable
+
+        `description`: Optional, the description of this variable.
+        NOTE: currently unused
+
+        `items`: Optional, fill this param if `type == 'enum'`
         """
         self.name = name
         self.godot_type = type
@@ -412,7 +424,7 @@ class EntityProperty(bpy.types.PropertyGroup):
 
 class EntityDefinition(bpy.types.PropertyGroup):
     """
-    Represents a Godot class with variables defined by the entity template
+    Represents a Godot class with variables defined in the entity template
     """
     properties: bpy.props.CollectionProperty(type=EntityProperty)  # type: ignore
 
@@ -429,17 +441,23 @@ class EntityDefinition(bpy.types.PropertyGroup):
 
         Parameters
         ----------
-        `name`: The Godot variable name
-        `value`: The Godot variable value
-        `type`: The Godot type of the variable.
-        `items`: the items for an ENUM property
+        `name`: Name of the corresponding Godot variable
+
+        `value`: Value of the corresponding Godot variable
+
+        `type`: Godot type of the corresponding variable
+
+        `description`: Optional, the description of this variable.
+        NOTE: currently unused
+
+        `items`: Optional, fill this param if `type == 'enum'`
         """
         prop = self.properties.add()
         prop.init(name, value, type, description, items)
 
     def clear(self) -> None:
         """
-        Clears this entity
+        Deletes this entity's variables
         """
         self.properties.clear()
 
@@ -449,7 +467,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
 
         Returns
         -------
-        `props`: dictionary with `prop.name` as key and
+        `props`: dictionary with `prop.name` of each property as key and
         `'type', 'value', 'description', 'items'` as sub-dictionary keys
         """
         return {
@@ -470,7 +488,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
 def reset_class_definition(self, context) -> None:
     """
     Reset `self.class_definition` and populate with new variables
-    from new `self.class_name`
+    from new `context.scene.entity_template[self.class_name]`
     """
     self.class_definition.clear()
     self.class_name_backup = self.class_name
@@ -513,10 +531,11 @@ def refresh_class_definitions() -> None:
             continue
 
         # If class def was updated, re-assign values from previous def
+        # Grab old variables
         old_props = object.class_definition.get_properties()
         # Reset to backup in-case class definition order has changed
         object.class_name = object.class_name_backup
-        # Reset any common vars between previous and current template iterations
+        # refill common vars between previous and current template iterations
         for prop in object.class_definition:
             name = prop.name
             type = prop.godot_type
@@ -556,7 +575,7 @@ def get_entity_list(self, context) -> list[tuple[str, str, str]]:
     return [(key, key, key) for key in context.scene.entity_template.keys()]
 
 @persistent
-def load_template(file=None) -> None:
+def load_template(file) -> None:
     """
     Load entity template at the start of each session
     """
