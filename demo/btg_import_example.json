@@ -2,15 +2,27 @@
     "Cube": {
         "class": "CharacterBody3D",
         "variables": {
-            "floor_stop_on_slope": ["bool", false],
-            "max_slides": ["int", 19],
-            "up_direction": ["Vector3", "(-0.32999998331069946, 1.149999976158142, 0.32999998331069946)"]
+            "floor_stop_on_slope": {
+                "type": "bool",
+                "value": false
+            },
+            "max_slides": {
+                "type": "int",
+                "value": 19
+            },
+            "up_direction": {
+                "type": "Vector3",
+                "value": "(-0.32999998331069946, 1.149999976158142, 0.32999998331069946)"
+            }
         }
     },
     "Icosphere": {
         "class": "Area3D",
         "variables": {
-            "angular_damp": ["float", 0.8199999928474426]
+            "angular_damp": {
+                "type": "float",
+                "value": 0.8199999928474426
+            }
         }
     }
 }
