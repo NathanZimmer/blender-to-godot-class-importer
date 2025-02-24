@@ -1,19 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://oa6inp66pe1u"]
+[gd_scene load_steps=2 format=3 uid="uid://oa6inp66pe1u"]
 
-[ext_resource type="Script" path="res://addons/blender_to_godot_pipeline/src/btg_importer.gd" id="1_a3c8r"]
 [ext_resource type="PackedScene" uid="uid://b5g2ytj2cp0xx" path="res://addons/blender_to_godot_pipeline/demo/example.blend" id="2_lagi6"]
 
 [node name="ExampleScene" type="Node3D"]
-script = ExtResource("1_a3c8r")
+transform = Transform3D(1, 0, 0, 0, 0.999779, -0.0210471, 0, 0.0210471, 0.999779, 0, 0, 0)
 
 [node name="example" parent="." instance=ExtResource("2_lagi6")]
-
-[node name="Cube" parent="example" index="0"]
-up_direction = Vector3(-0.265896, 0.926606, 0.265896)
-max_slides = 19
-floor_stop_on_slope = false
-
-[node name="Icosphere" parent="example" index="1"]
-angular_damp = 0.82
 
 [editable path="example"]
