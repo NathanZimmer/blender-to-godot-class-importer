@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b5g2ytj2cp0xx"
-path="res://.godot/imported/example.blend-79d3d2f4ca9fc874a5be06a98d3cd381.scn"
+uid="uid://2cp8dpors73v"
+path="res://.godot/imported/demo_scene.blend-b486bf84850ec7ae0438556e6cb3044b.scn"
 
 [deps]
 
-source_file="res://addons/blender_to_godot_pipeline/demo/example.blend"
-dest_files=["res://.godot/imported/example.blend-79d3d2f4ca9fc874a5be06a98d3cd381.scn"]
+source_file="res://addons/blender_to_godot_pipeline/demo/demo_scene.blend"
+dest_files=["res://.godot/imported/demo_scene.blend-b486bf84850ec7ae0438556e6cb3044b.scn"]
 
 [params]
 

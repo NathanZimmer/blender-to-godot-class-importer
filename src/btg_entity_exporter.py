@@ -227,7 +227,10 @@ class EntityTemplateReader(bpy.types.Operator):
         """
         Read json from `scene.entity_def_path` into `scene.entity_template`
         """
-        with open(bpy.context.scene.entity_def_path) as entity_json:
+        entity_def_path = bpy.context.scene.entity_def_path
+        if entity_def_path[:2] == '//':
+            entity_def_path = bpy.path.abspath('//') + entity_def_path[2:]
+        with open(entity_def_path) as entity_json:
             # Place 'None' at the first index for defaulting
             bpy.context.scene.entity_template.reset({'None': ''} | json.load(entity_json))
 
@@ -264,7 +267,10 @@ class EntityImportWriter(bpy.types.Operator):
         }
 
         try:
-            with open(context.scene.btg_write_path, 'w+') as file:
+            btg_write_path = bpy.context.scene.btg_write_path
+            if btg_write_path[:2] == '//':
+                btg_write_path = bpy.path.abspath('//') + btg_write_path[2:]
+            with open(btg_write_path, 'w+') as file:
                 json.dump(btg_json, file)
 
             self.report({'DEBUG'}, f'{btg_json=}')
@@ -333,7 +339,7 @@ class EntityProperty(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = ''
+        items: list[str] = []
     ) -> None:
         """
         Initialize object
@@ -438,7 +444,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = ''
+        items: list[str] = []
     ) -> None:
         """
         Add variable to `self.properties`
@@ -503,7 +509,12 @@ def reset_class_definition(self, context) -> None:
     class_def = context.scene.entity_template[self.class_name]
 
     for var_name, var_def in class_def.items():
-        var_type, var_default, var_desc, var_items = var_def
+        # var_type, var_default, var_desc, var_items = var_def
+        var_type = var_def['type']
+        var_default = var_def['default']
+        var_desc = var_def['description']
+        var_desc = var_def.get('description', '')
+        var_items = var_def.get('options', [])
 
         self.class_definition.add(
             name=var_name,
