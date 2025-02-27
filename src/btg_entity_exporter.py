@@ -1,3 +1,7 @@
+"""
+Blender-to-Godot entity exporter. This module reads from an entity template
+JSON and writes an entity definition JSON. Install this in Blender as an addon.
+"""
 import bpy
 from bpy.app.handlers import persistent
 import json
