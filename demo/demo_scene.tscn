@@ -9,6 +9,7 @@
 transform = Transform3D(1, 0, 0, 0, 0.999779, -0.0210471, 0, 0.0210471, 0.999779, 0, 0, 0)
 script = ExtResource("2_dqxhv")
 entity_definition_path = "res://addons/blender_to_godot_pipeline/demo/entity_definition.json"
+auto_import = true
 class_map = {
 "BTGExampleClass0": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_0.gd",
 "BTGExampleClass1": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_1.gd"
@@ -16,16 +17,16 @@ class_map = {
 
 [node name="demo_scene" parent="." instance=ExtResource("2_cq2yj")]
 
-[node name="Cube" parent="demo_scene" index="0"]
+[node name="BTGExample0" parent="demo_scene" index="0"]
 script = ExtResource("3_ly43m")
-string_example = "Testing!"
-int_example = 2
-vector_example = Vector3(3, 2.5, 1)
+string_example = "lets see if this works"
+int_example = 4
+vector_example = Vector3(3, 1, 2)
 enum_example = 1
 
-[node name="Icosphere" parent="demo_scene" index="1"]
+[node name="BTGExample1" parent="demo_scene" index="1"]
 script = ExtResource("4_82c37")
 float_example = 0.25
-custom_float_example = -1.1
+custom_float_example = -1.5
 
 [editable path="demo_scene"]
