@@ -33,16 +33,6 @@ const AUTO_IMPORT_DELAY: int = 1
 		else:
 			timer.stop()
 
-## TODO
-@export var class_map: Dictionary
-
-## Handle assignment of custom types defind in your entity template JSON.
-## Formatted as `Dictionary(String: Callable)` [br]
-## * `String`: "type" from the entity template/definition JSON [br]
-## * `Callable`: takes in "value" from entity definition as its only param
-## and returns the final, modified value [br]
-## NOTE: Needs to be updated manually because Godot does not support `Callable`
-var custom_hanlders = {"custom_float": BTGExampleClass1.custom_float_handler}
 var file_update_time: int = -1
 var timer: Timer
 
@@ -85,31 +75,36 @@ func _import() -> void:
 	json.parse(import_text)
 	var entity_def = json.data
 
-	var num_errors = _import_entities_from_def(entity_def, self)
-	if num_errors == 0:
-		print("Finished import with no errors!")
+	var num_failures = _import_entities_from_def(entity_def, self)
+	if num_failures == 0:
+		print("Finished import with no failures!")
 	else:
-		print("Finished import with %d errors (see warnings)" % num_errors)
+		print("Finished import with %d failures (see warnings)" % num_failures)
 
 
 ## Recursively search through nodes and replace based on import JSON
 func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> int:
-	var num_errors = 0
+	var num_failures = 0
 	var node_name = node.name
 
 	# Verify that the class_name is valid
 	var new_node = null
 	if node_name in entity_def:
 		var node_class_name = entity_def[node_name]["class"]
+		var node_class_uid = entity_def[node_name]["uid"]
 
 		# Populate new node
-		if node_class_name in class_map:
-			new_node = load(class_map[node_class_name]).new()
-		else:
+		new_node = load(node_class_uid).new()
+		if new_node == null:
 			new_node = ClassDB.instantiate(node_class_name)
 			if new_node == null:
-				push_warning("Class not defined: Failed on (Node: %s, class_name: %s)" % [node_name, node_class_name])
-				num_errors += 1
+				push_warning(
+					(
+						"Class not defined: Failed on (Node: %s, class_name: %s, uid: %s)"
+						% [node_name, node_class_name, node_class_uid]
+					)
+				)
+				num_failures += 1
 
 	# If the class_name is valid, continue copying from definition
 	if new_node != null:
@@ -126,7 +121,7 @@ func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> int:
 		for variable in variables:
 			if not variable in node:
 				push_warning("Missing variable definition! Failed on (Node: %s, variable: %s)" % [node_name, variable])
-				num_errors += 1
+				num_failures += 1
 				continue
 
 			var type = variables[variable]["type"]
@@ -135,7 +130,7 @@ func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> int:
 			if type in ["int", "String", "bool", "float", "enum"]:
 				node.set(variable, value)
 			else:
-				var converted_value = _cast_to_type(value, type)
+				var converted_value = _cast_to_type(node, value, type)
 				if converted_value == null:
 					push_warning(
 						(
@@ -143,24 +138,24 @@ func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> int:
 							% [node_name, type, variable]
 						)
 					)
-					num_errors += 1
+					num_failures += 1
 					continue
 				node.set(variable, converted_value)
 
 	# Recursively search children
 	if node.get_children().is_empty():
-		return num_errors
+		return num_failures
 	for child in node.get_children():
 		# Need to add timer to scene for auto-import to function, ignore it when navigating scene tree
 		if child == timer:
 			continue
-		num_errors += _import_entities_from_def(entity_def, child)
+		num_failures += _import_entities_from_def(entity_def, child)
 
-	return num_errors
+	return num_failures
 
 
 ## Convert `value` to type `type`
-func _cast_to_type(value, type: String):
+static func _cast_to_type(node: Node, value, type: String):
 	if type == "list":
 		return str_to_var(value)
 	if type == "Vector3":
@@ -173,8 +168,8 @@ func _cast_to_type(value, type: String):
 		value = value.replace(")", "]")
 		value = str_to_var(value)
 		return Vector3i(value)
-	if type in custom_hanlders:
-		value = custom_hanlders[type].call(value)
+	if node.has_method(type):
+		value = node.call(type, value)
 		return value
 
 	return null

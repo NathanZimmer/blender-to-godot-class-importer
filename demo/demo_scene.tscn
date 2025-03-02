@@ -9,11 +9,6 @@
 transform = Transform3D(1, 0, 0, 0, 0.999779, -0.0210471, 0, 0.0210471, 0.999779, 0, 0, 0)
 script = ExtResource("2_dqxhv")
 entity_definition_path = "res://addons/blender_to_godot_pipeline/demo/entity_definition.json"
-auto_import = true
-class_map = {
-"BTGExampleClass0": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_0.gd",
-"BTGExampleClass1": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_1.gd"
-}
 
 [node name="demo_scene" parent="." instance=ExtResource("2_cq2yj")]
 

@@ -1,10 +1,13 @@
 {
     "": {
-        "": {
-            "type": "",
-            "default": "",
-            "description": "",
-            "options": []
+        "uid": "",
+        "variables": {
+            "": {
+                "type": "",
+                "default": "",
+                "description": "",
+                "options": []
+            }
         }
     }
 }
