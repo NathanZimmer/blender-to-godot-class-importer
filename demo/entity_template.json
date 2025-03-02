@@ -1,0 +1,48 @@
+{
+    "BTGExampleClass0": {
+        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_0.gd",
+        "variables": {
+            "string_example": {
+                "type": "String",
+                "default": "string example",
+                "description": "",
+                "options": []
+            },
+            "int_example": {
+                "type": "int",
+                "default": 1,
+                "description": "",
+                "options": []
+            },
+            "vector_example": {
+                "type": "Vector3",
+                "default": [1, 2, 3],
+                "description": "",
+                "options": []
+            },
+            "enum_example": {
+                "type": "enum",
+                "default": "OPTION_1",
+                "description": "",
+                "options": ["OPTION_1", "OPTION_2", "OPTION_3"]
+            }
+        }
+    },
+    "BTGExampleClass1": {
+        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_1.gd",
+        "variables": {
+            "float_example": {
+                "type": "float",
+                "default": 0.5,
+                "description": "",
+                "options": []
+            },
+            "custom_float_example": {
+                "type": "custom_float",
+                "default": "0.5",
+                "description": "",
+                "options": []
+            }
+        }
+    }
+}

@@ -1,3 +1,7 @@
+"""
+Blender-to-Godot entity exporter. This module reads from an entity template
+JSON and writes an entity definition JSON. Install this in Blender as an addon.
+"""
 import bpy
 from bpy.app.handlers import persistent
 import json
@@ -223,7 +227,10 @@ class EntityTemplateReader(bpy.types.Operator):
         """
         Read json from `scene.entity_def_path` into `scene.entity_template`
         """
-        with open(bpy.context.scene.entity_def_path) as entity_json:
+        entity_def_path = bpy.context.scene.entity_def_path
+        if entity_def_path[:2] == '//':
+            entity_def_path = bpy.path.abspath('//') + entity_def_path[2:]
+        with open(entity_def_path) as entity_json:
             # Place 'None' at the first index for defaulting
             bpy.context.scene.entity_template.reset({'None': ''} | json.load(entity_json))
 
@@ -245,6 +252,7 @@ class EntityImportWriter(bpy.types.Operator):
             # Convert to Godot naming standards
             object.name.replace('.', '_'): {
                 'class': object.class_name,
+                'uid': context.scene.entity_template[object.class_name]['uid'],
                 'variables': {
                     prop.name: {
                         'type': prop.godot_type,
@@ -260,7 +268,10 @@ class EntityImportWriter(bpy.types.Operator):
         }
 
         try:
-            with open(context.scene.btg_write_path, 'w+') as file:
+            btg_write_path = bpy.context.scene.btg_write_path
+            if btg_write_path[:2] == '//':
+                btg_write_path = bpy.path.abspath('//') + btg_write_path[2:]
+            with open(btg_write_path, 'w+') as file:
                 json.dump(btg_json, file)
 
             self.report({'DEBUG'}, f'{btg_json=}')
@@ -329,7 +340,7 @@ class EntityProperty(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = ''
+        items: list[str] = []
     ) -> None:
         """
         Initialize object
@@ -434,7 +445,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = ''
+        items: list[str] = []
     ) -> None:
         """
         Add variable to `self.properties`
@@ -498,8 +509,13 @@ def reset_class_definition(self, context) -> None:
 
     class_def = context.scene.entity_template[self.class_name]
 
-    for var_name, var_def in class_def.items():
-        var_type, var_default, var_desc, var_items = var_def
+    for var_name, var_def in class_def['variables'].items():
+        # var_type, var_default, var_desc, var_items = var_def
+        var_type = var_def['type']
+        var_default = var_def['default']
+        var_desc = var_def['description']
+        var_desc = var_def.get('description', '')
+        var_items = var_def.get('options', [])
 
         self.class_definition.add(
             name=var_name,
@@ -544,16 +560,20 @@ def refresh_class_definitions() -> None:
 
 def set_search_property(self, context) -> None:
     """
-    Set the Scene search property based on `context.scene.search_class_name` and
-    `context.scene.search_var_name`
+    Set the Scene search property based on `scene.search_class_name` and
+    `scene.search_var_name`
     """
-    class_name = context.scene.search_class_name
-    var_name = context.scene.search_var_name
-    var_type, var_val, var_desc, var_items = context.scene.entity_template[class_name][var_name]
+    class_name = self.search_class_name
+    var_name = self.search_var_name
+    var_def = self.entity_template[class_name]['variables'][var_name]
+    var_type = var_def['type']
+    var_val = var_def['default']
+    var_desc = var_def['description']
+    var_items = var_def['options']
 
-    context.scene.comparison_type = '=='
+    self.comparison_type = '=='
 
-    context.scene.search_property.init(
+    self.search_property.init(
         name=var_name,
         type=var_type,
         value=var_val,
@@ -566,7 +586,7 @@ def get_variable_search_list(self, context) -> list[tuple[str, str, str]]:
     Get the keys for `context.scene.search_class_name` in blender ENUM format
     """
     search_class = context.scene.entity_template[context.scene.search_class_name]
-    return [(key, key, key) for key in search_class.keys()]
+    return [(key, key, key) for key in search_class['variables'].keys()]
 
 def get_entity_list(self, context) -> list[tuple[str, str, str]]:
     """

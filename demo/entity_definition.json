@@ -1,0 +1,38 @@
+{
+    "BTGExample0": {
+        "class": "BTGExampleClass0",
+        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_0.gd",
+        "variables": {
+            "string_example": {
+                "type": "String",
+                "value": "lets see if this works"
+            },
+            "int_example": {
+                "type": "int",
+                "value": 4
+            },
+            "vector_example": {
+                "type": "Vector3",
+                "value": "(3.0, 1.0, 2.0)"
+            },
+            "enum_example": {
+                "type": "enum",
+                "value": 1
+            }
+        }
+    },
+    "BTGExample1": {
+        "class": "BTGExampleClass1",
+        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_1.gd",
+        "variables": {
+            "float_example": {
+                "type": "float",
+                "value": 0.25
+            },
+            "custom_float_example": {
+                "type": "custom_float",
+                "value": "1.5"
+            }
+        }
+    }
+}
