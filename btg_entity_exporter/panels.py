@@ -190,6 +190,7 @@ def register():
     bpy.utils.register_class(BTGPanel)
     bpy.utils.register_class(SelectionPopup)
 
+
 def unregister():
     """
     Blender API function

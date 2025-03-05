@@ -4,6 +4,7 @@
 import bpy
 import json
 import traceback
+from . import utilities
 
 
 class EntityTemplateReader(bpy.types.Operator):
@@ -26,7 +27,7 @@ class EntityTemplateReader(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Clear old defs and refresh updated defs
-        self.refresh_class_definitions()
+        utilities.refresh_class_definitions()
 
         self.report({'DEBUG'}, f'{context.scene.entity_template=}')
         self.report({'INFO'}, 'Loaded JSON!')
@@ -43,40 +44,6 @@ class EntityTemplateReader(bpy.types.Operator):
         with open(entity_def_path) as entity_json:
             # Place 'None' at the first index for defaulting
             bpy.context.scene.entity_template.reset({'None': ''} | json.load(entity_json))
-
-    @staticmethod
-    def refresh_class_definitions() -> None:
-        """
-        Compare `object.class_definition` values to `scene.entity_template`.
-        Check if:
-        * class was removed
-        * class order was changed
-        * class variables were reordered/changed
-        """
-        scene = bpy.context.scene
-
-        for object in scene.objects:
-            # If object is None, it has no vars to clear
-            if object.class_name == 'None':
-                continue
-
-            # If class was removed from template, clear its definition
-            if object.class_name_backup not in scene.entity_template:
-                object.class_name = 'None'
-                object.class_definition.clear()
-                continue
-
-            # If class def was updated, re-assign values from previous def
-            # Grab old variables
-            old_props = object.class_definition.get_properties()
-            # Reset class_name to backup in-case class definition order has changed
-            object.class_name = object.class_name_backup
-            # refill common vars between previous and current template iterations
-            for prop in object.class_definition:
-                name = prop.name
-                type = prop.godot_type
-                if name in old_props and type == old_props[name]['type']:
-                    prop.value = old_props[name]['value']
 
 
 class EntityImportWriter(bpy.types.Operator):
@@ -136,6 +103,7 @@ def register():
     """
     bpy.utils.register_class(EntityTemplateReader)
     bpy.utils.register_class(EntityImportWriter)
+
 
 def unregister():
     """

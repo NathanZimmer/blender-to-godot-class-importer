@@ -238,6 +238,7 @@ def register():
     bpy.utils.register_class(EntityProperty)
     bpy.utils.register_class(EntityDefinition)
 
+
 def unregister():
     """
     Blender API function
