@@ -120,7 +120,12 @@ func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> int:
 		var variables = entity_def[node_name]["variables"]
 		for variable in variables:
 			if not variable in node:
-				push_warning("Missing variable definition! Failed on (Node: %s, variable: %s)" % [node_name, variable])
+				push_warning(
+					(
+						"Missing variable definition! Failed on (Node: %s, variable: %s)"
+						% [node_name, variable]
+					)
+				)
 				num_failures += 1
 				continue
 

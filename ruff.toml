@@ -1,0 +1,6 @@
+line-length = 120
+indent-width = 4
+
+[format]
+indent-style = "space"
+quote-style = "single"
