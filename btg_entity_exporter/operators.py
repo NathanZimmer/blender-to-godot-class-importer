@@ -1,6 +1,7 @@
 """
 `bpy.types.Operator` inheriting classes
 """
+
 import bpy
 import json
 import traceback
@@ -11,6 +12,7 @@ class EntityTemplateReader(bpy.types.Operator):
     """
     Read Godot entity template JSON and object entity definitions
     """
+
     bl_idname = 'json.read'
     bl_label = 'Read entity JSON'
 
@@ -21,9 +23,7 @@ class EntityTemplateReader(bpy.types.Operator):
         try:
             self.read_template_json()
         except Exception:
-            self.report(
-                {'ERROR'}, f'Failed to load JSON file with exception:\n{traceback.format_exc()}'
-            )
+            self.report({'ERROR'}, f'Failed to load JSON file with exception:\n{traceback.format_exc()}')
             return {'CANCELLED'}
 
         # Clear old defs and refresh updated defs
@@ -50,6 +50,7 @@ class EntityImportWriter(bpy.types.Operator):
     """
     Write BTG import JSON from object entity defintions
     """
+
     bl_idname = 'json.write'
     bl_label = 'Write BTG import JSON'
 
@@ -69,14 +70,16 @@ class EntityImportWriter(bpy.types.Operator):
                     prop.name: {
                         'type': prop.godot_type,
                         'value': (
-                            prop.value if type(prop.value) in json_types
-                            else str(prop.value[0:])  # Convert non-JSON vartypes to string
-                        )
+                            prop.value
+                            if type(prop.value) in json_types  # Convert non-JSON vartypes to string
+                            else str(prop.value[0:])
+                        ),
                     }
                     for prop in object.class_definition
-                }
+                },
             }
-            for object in context.scene.objects if object.class_name != 'None'
+            for object in context.scene.objects
+            if object.class_name != 'None'
         }
 
         # Write JSON
@@ -91,9 +94,7 @@ class EntityImportWriter(bpy.types.Operator):
             self.report({'INFO'}, 'Wrote JSON!')
             return {'FINISHED'}
         except Exception:
-            self.report(
-                {'ERROR'}, f'Failed to write JSON file with exception:\n{traceback.format_exc()}'
-            )
+            self.report({'ERROR'}, f'Failed to write JSON file with exception:\n{traceback.format_exc()}')
             return {'CANCELLED'}
 
 

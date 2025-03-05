@@ -1,6 +1,7 @@
 """
-Utilitiy functions for operating on `bpy.context` `scene` and `object` variables
+Utilitiy functions for operating on `bpy.context` `scene` and `object` variables defined in `__init__.register()`
 """
+
 import bpy
 
 
@@ -70,7 +71,7 @@ def reset_class_definition(self, context) -> None:
             type=var_type,
             value=var_default,
             description=var_desc,
-            items=var_items
+            items=var_items,
         )
 
 

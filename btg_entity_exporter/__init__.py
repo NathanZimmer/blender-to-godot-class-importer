@@ -4,6 +4,7 @@ from . import operators
 from . import panels
 from . import utilities
 import importlib
+
 if 'bpy' in locals():
     importlib.reload(entity)
     importlib.reload(operators)
@@ -30,17 +31,17 @@ def register():
 
     # File IO
     bpy.types.Scene.entity_def_path = bpy.props.StringProperty(
-        name = 'Godot entity definition path',
-        description = 'The path of your Godot entity definition JSON',
-        subtype = 'FILE_PATH',
+        name='Godot entity definition path',
+        description='The path of your Godot entity definition JSON',
+        subtype='FILE_PATH',
     )
     bpy.types.Scene.btg_write_path = bpy.props.StringProperty(
-        name = 'BTG import write-path',
-        description = (
+        name='BTG import write-path',
+        description=(
             'The path to write your BTG import JSON. You have to write '
             'this JSON in order to use the import script in Godot.'
         ),
-        subtype = 'FILE_PATH',
+        subtype='FILE_PATH',
     )
 
     # Entity definition
@@ -68,7 +69,7 @@ def register():
     bpy.types.Scene.search_type = bpy.props.EnumProperty(
         items=[
             ('class', 'Class name', 'Select all objects of this class'),
-            ('var_val', 'Variable value', 'Select all objects with this variable value')
+            ('var_val', 'Variable value', 'Select all objects with this variable value'),
         ],
         description='Search type',
         default=0,
@@ -80,7 +81,6 @@ def register():
             ('==', '==', 'equal to'),
             ('>', '>', 'greater than'),
             ('>=', '>=', 'greater than or equal to'),
-
         ],
         description='Type of evaluation to use',
         default='==',
@@ -121,5 +121,5 @@ def unregister():
     del bpy.types.Scene.search_property
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     register()

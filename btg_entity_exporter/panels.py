@@ -1,6 +1,7 @@
 """
 The `bpy.types.Panel` inheriting classes that define the GUI of the addon
 """
+
 import bpy
 import numpy as np
 from . import entity
@@ -10,6 +11,7 @@ class BTGPanel(bpy.types.Panel):
     """
     Settings panel for the Blender to Godot pipeline
     """
+
     bl_idname = 'OBJECT_PT_btg_panel'
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -63,8 +65,9 @@ class SelectionPopup(bpy.types.Operator):
     """
     Search for objects in the scene based on class name or class variable value
     """
-    bl_idname = "select_popup.open"
-    bl_label = "Find objects by..."
+
+    bl_idname = 'select_popup.open'
+    bl_label = 'Find objects by...'
 
     def execute(self, context):
         """
@@ -106,7 +109,7 @@ class SelectionPopup(bpy.types.Operator):
         return {'FINISHED'}
 
     @staticmethod
-    def close(x: any, y: any, delta: float = 1.e-8) -> bool:
+    def close(x: any, y: any, delta: float = 1.0e-8) -> bool:
         """
         Check if vars `x` and `y` are within `delta` distance
         """
@@ -130,7 +133,7 @@ class SelectionPopup(bpy.types.Operator):
         -------
         `result`: result of `x` compared to `y` by `comp_type`
         """
-        match (comp_type):
+        match comp_type:
             case '<':
                 return x < y
             case '<=':
@@ -171,11 +174,11 @@ class SelectionPopup(bpy.types.Operator):
 
             search_property = context.scene.search_property
             # Types that we want to show the expanded set of comparison options for
-            expanded_compare_types =  (
+            expanded_compare_types = (
                 entity.PropTypes.INT.value,
                 entity.PropTypes.FLOAT.value,
                 entity.PropTypes.FLOAT_VECTOR.value,
-                entity.PropTypes.INT_VECTOR.value
+                entity.PropTypes.INT_VECTOR.value,
             )
             if search_property.string_ref in expanded_compare_types:
                 box.prop(context.scene, 'comparison_type', text='')

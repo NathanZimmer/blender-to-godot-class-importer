@@ -2,6 +2,7 @@
 BTG Entity classes. These classes contain the information needed to
 assign Godot Nodes/variables and functions for manipulating that data
 """
+
 import bpy
 import json
 import enum
@@ -21,6 +22,7 @@ class EntityTemplate(bpy.types.PropertyGroup):
     """
     Wrapper for entity template JSON file
     """
+
     template = {}
     template_str: bpy.props.StringProperty(default='{"None": ""}')  # type: ignore
 
@@ -60,6 +62,7 @@ class EntityProperty(bpy.types.PropertyGroup):
     Represents a  Godot variable. Wraps `bpy.props` objects
     for easier dynamic allocation and manipulation
     """
+
     def get_enum_items(self, _=None) -> list[tuple[str, str, str]]:
         """
         Return `self.mEnumItems` formatted for use with a Blender
@@ -74,7 +77,7 @@ class EntityProperty(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = []
+        items: list[str] = [],
     ) -> None:
         """
         Initialize object
@@ -98,7 +101,7 @@ class EntityProperty(bpy.types.PropertyGroup):
         self.godot_type = type
         self.description = description
 
-        match(type):
+        match type:
             case 'bool':
                 self.mBool = value
                 self.mType = PropTypes.BOOL.value
@@ -171,6 +174,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
     """
     Represents a Godot class and variable set defined in the entity template JSON
     """
+
     # List of Godot variables
     properties: bpy.props.CollectionProperty(type=EntityProperty)  # type: ignore
 
@@ -180,7 +184,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = []
+        items: list[str] = [],
     ) -> None:
         """
         Add variable to `self.properties`
