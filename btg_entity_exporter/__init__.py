@@ -55,8 +55,14 @@ def register():
     # This is used when the enum is updated and we need to check if the class
     # order has changed.
     bpy.types.Object.class_name_backup = bpy.props.StringProperty()
-    bpy.types.Object.class_definition = bpy.props.PointerProperty(type=entity.EntityDefinition)
-    bpy.types.Scene.entity_template = bpy.props.PointerProperty(type=entity.EntityTemplate)
+    bpy.types.Object.class_definition = bpy.props.PointerProperty(
+        type=entity.EntityDefinition,
+        override={'LIBRARY_OVERRIDABLE'},
+    )
+    bpy.types.Scene.entity_template = bpy.props.PointerProperty(
+        type=entity.EntityTemplate,
+        override={'LIBRARY_OVERRIDABLE'},
+    )
 
     # Property searching
     bpy.types.Scene.search_class_name = bpy.props.EnumProperty(

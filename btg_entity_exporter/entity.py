@@ -156,18 +156,43 @@ class EntityProperty(bpy.types.PropertyGroup):
             ('mIntVector', 'mIntVector', 'mIntVector'),
             ('mFloatVector', 'mFloatVector', 'mFloatVector'),
             ('mEnum', 'mEnum', 'mEnum'),
-        ]
+        ],
     )  # type: ignore
 
     # Supported value types
-    mInt: bpy.props.IntProperty(name='int')  # type: ignore
-    mFloat: bpy.props.FloatProperty(name='float')  # type: ignore
-    mString: bpy.props.StringProperty(name='string')  # type: ignore
-    mBool: bpy.props.BoolProperty(name='bool')  # type: ignore
-    mIntVector: bpy.props.IntVectorProperty(name='Vector3i')  # type: ignore
-    mFloatVector: bpy.props.FloatVectorProperty(name='Vector3')  # type: ignore
-    mEnum: bpy.props.EnumProperty(name='enum', items=get_enum_items)  # type: ignore
-    mEnumItems: bpy.props.StringProperty(default='{"None": ""}')  # type: ignore
+    mInt: bpy.props.IntProperty(
+        name='int',
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    mFloat: bpy.props.FloatProperty(
+        name='float',
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    mString: bpy.props.StringProperty(
+        name='string',
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    mBool: bpy.props.BoolProperty(
+        name='bool',
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    mIntVector: bpy.props.IntVectorProperty(
+        name='Vector3i',
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    mFloatVector: bpy.props.FloatVectorProperty(
+        name='Vector3',
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    mEnum: bpy.props.EnumProperty(
+        name='enum',
+        items=get_enum_items,
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    mEnumItems: bpy.props.StringProperty(
+        default='{"None": ""}',
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
 
 
 class EntityDefinition(bpy.types.PropertyGroup):
@@ -176,7 +201,10 @@ class EntityDefinition(bpy.types.PropertyGroup):
     """
 
     # List of Godot variables
-    properties: bpy.props.CollectionProperty(type=EntityProperty)  # type: ignore
+    properties: bpy.props.CollectionProperty(
+        type=EntityProperty,
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
 
     def add(
         self,
