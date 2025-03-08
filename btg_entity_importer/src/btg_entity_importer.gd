@@ -94,7 +94,12 @@ func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> int:
 		var node_class_uid = entity_def[node_name]["uid"]
 
 		# Populate new node
-		new_node = load(node_class_uid).new()
+		var uid = ResourceUID.text_to_id(node_class_uid)
+		var node_class_full_path = ResourceUID.get_id_path(uid)
+		if node_class_full_path.get_extension() == "gd":
+			new_node = load(node_class_uid).new()
+		else:
+			new_node = load(node_class_uid).instantiate()
 		if new_node == null:
 			new_node = ClassDB.instantiate(node_class_name)
 			if new_node == null:

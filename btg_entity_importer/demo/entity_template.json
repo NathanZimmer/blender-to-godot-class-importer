@@ -44,5 +44,9 @@
                 "options": []
             }
         }
+    },
+    "BTGExampleScene": {
+        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_scene.tscn",
+        "variables": {}
     }
 }
