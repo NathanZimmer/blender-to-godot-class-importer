@@ -1,10 +1,14 @@
-[gd_scene load_steps=3 format=3 uid="uid://fjpvkfhwnykm"]
+[gd_scene load_steps=4 format=3 uid="uid://fjpvkfhwnykm"]
+
+[sub_resource type="TorusMesh" id="TorusMesh_6jhov"]
+inner_radius = 0.735
 
 [sub_resource type="BoxMesh" id="BoxMesh_lcpfc"]
 
 [sub_resource type="SphereMesh" id="SphereMesh_t4dco"]
 
-[node name="BtgExampleScene" type="Node3D"]
+[node name="BtgExampleScene" type="MeshInstance3D"]
+mesh = SubResource("TorusMesh_6jhov")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 mesh = SubResource("BoxMesh_lcpfc")
