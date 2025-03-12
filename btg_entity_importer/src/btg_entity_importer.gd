@@ -97,7 +97,7 @@ func _import() -> void:
     else:
         print("Finished import with %d failures (see warnings)" % num_failures)
 
-    # This doesn't create any duplicates, but the parent node is reset on reload
+    # Note: The parent node is reset on reload
     for node in added_nodes:
         # node.get_parent().set_owner(get_owner())
         BTGPostImportPlugin.recursive_set_owner(node, get_owner())
