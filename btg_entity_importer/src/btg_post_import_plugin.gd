@@ -11,9 +11,6 @@ func _get_import_options(path):
 
 
 func _post_process(scene):
-    if not run_btg_import:
-        return scene
-
     var entity_definition_path = get_option_value("entity_definition")
     if entity_definition_path.is_empty():
         return scene
@@ -29,7 +26,7 @@ func _post_process(scene):
     json.parse(import_text)
     var entity_def = json.data
 
-    var num_failures = _import_entities_from_def(entity_def, scene)
+    var num_failures = import_entities_from_def(entity_def, scene)
     if num_failures > 0:
         print("Finished import with %d failures (see warnings)" % num_failures)
 
@@ -37,13 +34,13 @@ func _post_process(scene):
 
 
 ## Recursively search through nodes and replace based on import JSON
-static func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> int:
+static func import_entities_from_def(entity_def: Dictionary, node: Node3D) -> int:
     var num_failures = 0
     var node_name = node.name
 
     # Verify that the class_name is valid
     var new_node = null
-    var tscn_child_nodes = []
+    var tscn_children = []
     if node_name in entity_def:
         var node_class_name = entity_def[node_name]["class"]
         var node_class_uid = entity_def[node_name]["uid"]
@@ -55,7 +52,7 @@ static func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> i
             new_node = load(node_class_uid).new()
         else:
             new_node = load(node_class_uid).instantiate()
-            tscn_child_nodes = new_node.get_children()
+            tscn_children = new_node.get_children()
         if new_node == null:
             new_node = ClassDB.instantiate(node_class_name)
             if new_node == null:
@@ -77,9 +74,9 @@ static func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> i
         node.free()
         node = new_node
 
-        # Set owner of new nodes
-        for child in tscn_child_nodes:
-            child.set_owner(node.get_owner())
+        # Set owner of new nodes from instantiated scene
+        for child in tscn_children:
+            _recursive_set_owner(child, node.get_owner())
 
         # Assign values
         var variables = entity_def[node_name]["variables"]
@@ -111,9 +108,21 @@ static func _import_entities_from_def(entity_def: Dictionary, node: Node3D) -> i
     if node.get_children().is_empty():
         return num_failures
     for child in node.get_children():
-        num_failures += _import_entities_from_def(entity_def, child)
+        if child.get_name() not in entity_def:
+            continue
+        num_failures += import_entities_from_def(entity_def, child)
 
     return num_failures
+
+
+## Set the owner of `node` and all nodes down its tree to `owner`
+static func _recursive_set_owner(node: Node3D, owner: Node3D):
+    node.set_owner(owner)
+    var children = node.get_children()
+    if children.is_empty():
+        return
+    for child in children:
+        _recursive_set_owner(child, owner)
 
 
 static func _cast_to_type(node: Node, value, type: String):

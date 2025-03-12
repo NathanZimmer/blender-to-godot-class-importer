@@ -1,10 +1,21 @@
-[gd_scene load_steps=3 format=3 uid="uid://oa6inp66pe1u"]
+[gd_scene load_steps=10 format=3 uid="uid://oa6inp66pe1u"]
 
 [ext_resource type="PackedScene" uid="uid://2cp8dpors73v" path="res://addons/blender_to_godot_pipeline/demo/demo_scene.blend" id="2_cq2yj"]
+[ext_resource type="Script" uid="uid://c8aafnscexbny" path="res://addons/blender_to_godot_pipeline/src/btg_entity_importer.gd" id="2_gtubk"]
+[ext_resource type="Script" uid="uid://cslerxu3gbk31" path="res://addons/blender_to_godot_pipeline/demo/btg_example_class_0.gd" id="3_bc2s4"]
+[ext_resource type="Script" uid="uid://cdw76g81jq3sk" path="res://addons/blender_to_godot_pipeline/demo/btg_example_class_1.gd" id="4_261sr"]
+[ext_resource type="PackedScene" uid="uid://crw56ku2221kn" path="res://addons/blender_to_godot_pipeline/demo/demo_scene_0.blend" id="5_261sr"]
 
 [sub_resource type="Environment" id="Environment_ojrjl"]
 background_color = Color(0.509286, 0.509286, 0.509286, 1)
 background_energy_multiplier = 1.7
+
+[sub_resource type="TorusMesh" id="TorusMesh_6jhov"]
+inner_radius = 0.735
+
+[sub_resource type="BoxMesh" id="BoxMesh_lcpfc"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_t4dco"]
 
 [node name="DemoScene" type="Node3D"]
 
@@ -14,4 +25,36 @@ environment = SubResource("Environment_ojrjl")
 
 [node name="demo_scene" parent="." instance=ExtResource("2_cq2yj")]
 
+[node name="BTGImporter" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+script = ExtResource("2_gtubk")
+entity_definition_path = "res://addons/blender_to_godot_pipeline/demo/entity_definition.json"
+metadata/_custom_type_script = "uid://c8aafnscexbny"
+
+[node name="demo_scene_0" parent="BTGImporter" instance=ExtResource("5_261sr")]
+
+[node name="BTGExample0" parent="BTGImporter/demo_scene_0" index="0"]
+script = ExtResource("3_bc2s4")
+string_example = "auto-import test 4"
+int_example = 4
+vector_example = Vector3(3, 1, 2)
+enum_example = 1
+
+[node name="BTGExample1" parent="BTGImporter/demo_scene_0" index="1"]
+script = ExtResource("4_261sr")
+float_example = 0.25
+custom_float_example = -1.5
+
+[node name="BTGExample2" parent="BTGImporter/demo_scene_0" index="2"]
+mesh = SubResource("TorusMesh_6jhov")
+
+[node name="MeshInstance3D" parent="BTGImporter/demo_scene_0/BTGExample2" index="0"]
+mesh = SubResource("BoxMesh_lcpfc")
+
+[node name="MeshInstance3D2" parent="BTGImporter/demo_scene_0/BTGExample2" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("SphereMesh_t4dco")
+skeleton = NodePath("../MeshInstance3D")
+
 [editable path="demo_scene"]
+[editable path="BTGImporter/demo_scene_0"]
