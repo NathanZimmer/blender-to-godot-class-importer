@@ -48,10 +48,10 @@ custom_float_example = -1.5
 [node name="BTGExample2" parent="BTGImporter/demo_scene_0" index="2"]
 mesh = SubResource("TorusMesh_6jhov")
 
-[node name="MeshInstance3D" parent="BTGImporter/demo_scene_0/BTGExample2" index="0"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BTGImporter/demo_scene_0/BTGExample2" index="0"]
 mesh = SubResource("BoxMesh_lcpfc")
 
-[node name="MeshInstance3D2" parent="BTGImporter/demo_scene_0/BTGExample2" index="1"]
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="BTGImporter/demo_scene_0/BTGExample2" index="1"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("SphereMesh_t4dco")
 skeleton = NodePath("../MeshInstance3D")

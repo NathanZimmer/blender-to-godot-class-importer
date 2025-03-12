@@ -30,6 +30,8 @@ const AUTO_IMPORT_DELAY: int = 1
 
 var file_update_time: int = -1
 var timer: Timer
+## Keep track of nodes added to the scene so we can remove them for re-importing
+var added_nodes: Array[Node] = []
 
 
 func _init():
@@ -78,14 +80,24 @@ func _import() -> void:
     json.parse(import_text)
     var entity_def = json.data
 
+    for node in added_nodes:
+        if node:
+            node.free()
+            node = null
+    added_nodes.clear()
+
     var num_failures = 0
     for child in get_children():
         if child == timer:
             continue
-        # TODO: Fix duplicates from scene replacements on import
-        num_failures += BTGPostImportPlugin.import_entities_from_def(entity_def, child)
+        num_failures += BTGPostImportPlugin.import_entities_from_def(entity_def, child, added_nodes)
 
     if num_failures == 0:
         print("Finished import with no failures!")
     else:
         print("Finished import with %d failures (see warnings)" % num_failures)
+
+    # This doesn't create any duplicates, but the parent node is reset on reload
+    for node in added_nodes:
+        # node.get_parent().set_owner(get_owner())
+        BTGPostImportPlugin.recursive_set_owner(node, get_owner())
