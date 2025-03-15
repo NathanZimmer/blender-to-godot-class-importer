@@ -135,11 +135,11 @@ class EntityProperty(bpy.types.PropertyGroup):
 
     @property
     def value(self) -> any:
-        return self[self.mType]
+        return getattr(self, self.mType)
 
     @value.setter
     def value(self, val: any) -> None:
-        self[self.mType] = val
+        setattr(self, self.mType, val)
 
     # Variable name and prop type
     name: bpy.props.StringProperty()  # type: ignore

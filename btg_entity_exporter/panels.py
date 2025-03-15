@@ -35,6 +35,7 @@ class BTGPanel(bpy.types.Panel):
         import_export_box.label(text=scene_props['btg_write_path'].name)
         import_export_box.prop(context.scene, 'btg_write_path', text='')
         import_export_box.operator('json.write')
+        import_export_box.prop(context.scene, 'export_on_save')
 
         # Search UI
         layout.label(text='Select Objects')

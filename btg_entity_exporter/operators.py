@@ -88,7 +88,7 @@ class EntityImportWriter(bpy.types.Operator):
             if btg_write_path[:2] == '//':
                 btg_write_path = bpy.path.abspath('//') + btg_write_path[2:]
             with open(btg_write_path, 'w+') as file:
-                json.dump(btg_json, file)
+                json.dump(btg_json, file, indent=4)
 
             self.report({'DEBUG'}, f'{btg_json=}')
             self.report({'INFO'}, 'Wrote JSON!')

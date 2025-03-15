@@ -76,6 +76,11 @@ static func import_entities_from_def(
         new_node.transform = node.transform
         new_node.name = node.name
 
+        # Copy mesh to new_node if both objects have a variable named "mesh"
+        var mesh = node.get("mesh")
+        if mesh != null:
+            new_node.set("mesh", mesh)
+
         # Replace and free
         node.replace_by(new_node, true)
         node.free()
