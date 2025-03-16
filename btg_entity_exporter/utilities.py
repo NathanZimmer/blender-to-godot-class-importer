@@ -120,7 +120,7 @@ def get_variable_search_list(self, _) -> list[tuple[str, str, str]]:
 
     Parameters
     ----------
-    `context`: Context of the caller of this function
+    `self`: Caller of this function
     """
     search_class = self.entity_template[self.search_class_name]
     return [(key, key, key) for key in search_class['variables'].keys()]

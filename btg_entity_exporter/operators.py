@@ -10,7 +10,7 @@ from . import utilities
 
 class EntityTemplateReader(bpy.types.Operator):
     """
-    Read Godot entity template JSON and object entity definitions
+    Read Godot entity template JSON and refresh object entity definitions
     """
 
     bl_idname = 'json.read'
@@ -56,7 +56,7 @@ class EntityImportWriter(bpy.types.Operator):
 
     def execute(self, context):
         """
-        Write entity definitions to Godot import JSON
+        Write entity definitions import JSON used by Godot
         """
         json_types = (int, str, bool, float)  # Values that can be translated to JSON format
 

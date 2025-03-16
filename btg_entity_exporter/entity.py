@@ -1,6 +1,6 @@
 """
-BTG Entity classes. These classes contain the information needed to
-assign Godot Nodes/variables and functions for manipulating that data
+BTG Entity classes. These classes contain the Godot Node/variables definitions
+and functions for manipulating that data
 """
 
 import bpy
@@ -59,7 +59,7 @@ class EntityTemplate(bpy.types.PropertyGroup):
 
 class EntityProperty(bpy.types.PropertyGroup):
     """
-    Represents a  Godot variable. Wraps `bpy.props` objects
+    Represents a Godot variable. Wraps `bpy.props` objects
     for easier dynamic allocation and manipulation
     """
 
@@ -77,7 +77,7 @@ class EntityProperty(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = [],
+        items: list[str] = None,
     ) -> None:
         """
         Initialize object
@@ -135,10 +135,16 @@ class EntityProperty(bpy.types.PropertyGroup):
 
     @property
     def value(self) -> any:
+        """
+        Get variable described by `self.string_ref`
+        """
         return getattr(self, self.mType)
 
     @value.setter
     def value(self, val: any) -> None:
+        """
+        Set variable described by `self.string_ref`
+        """
         setattr(self, self.mType, val)
 
     # Variable name and prop type
@@ -160,6 +166,7 @@ class EntityProperty(bpy.types.PropertyGroup):
     )  # type: ignore
 
     # Supported value types
+    # NOTE: We need to instantiate a var of each type because of API quirks
     mInt: bpy.props.IntProperty(
         name='int',
         override={'LIBRARY_OVERRIDABLE'},
@@ -197,7 +204,7 @@ class EntityProperty(bpy.types.PropertyGroup):
 
 class EntityDefinition(bpy.types.PropertyGroup):
     """
-    Represents a Godot class and variable set defined in the entity template JSON
+    Represents a Godot class/variables from the entity template JSON
     """
 
     # List of Godot variables
@@ -212,10 +219,11 @@ class EntityDefinition(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = [],
+        items: list[str] = None,
     ) -> None:
         """
-        Add variable to `self.properties`
+        Add a variable to this object's variable list.
+        Variables are accessd by index.
 
         Parameters
         ----------
@@ -245,8 +253,17 @@ class EntityDefinition(bpy.types.PropertyGroup):
 
         Returns
         -------
-        `props`: dictionary with `prop.name` of each property as key and
-        `'type', 'value', 'description', 'items'` as sub-dictionary keys
+        ```
+        props: {
+            name: {
+                'type': ...,
+                'value': ...,
+                'description': ...,
+                'items': ...,
+            },
+            ...
+        }
+        ```
         """
         return {
             prop.name: {
@@ -260,6 +277,9 @@ class EntityDefinition(bpy.types.PropertyGroup):
 
     def __iter__(self):
         return self.properties.__iter__()
+
+    def __getitem__(self, key):
+        return self.properties[key]
 
 
 def register():

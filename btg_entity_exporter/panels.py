@@ -79,7 +79,7 @@ class SelectionPopup(bpy.types.Operator):
 
     def execute(self, context):
         """
-        Use search_ scene variables to select objects with the specified entity values
+        Use `search_` scene variables to select objects with the specified entity values
         """
         search_class = context.scene.search_class_name
 
@@ -155,7 +155,7 @@ class SelectionPopup(bpy.types.Operator):
             case '_':
                 return SelectionPopup.close(x, y)
 
-    def invoke(self, context, event):
+    def invoke(self, context, _):
         """
         Invoke popup
         """
