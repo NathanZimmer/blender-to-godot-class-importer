@@ -48,5 +48,9 @@
     "BTGExampleScene": {
         "uid": "uid://fjpvkfhwnykm",
         "variables": {}
+    },
+    "BTGMeshExample": {
+        "uid": "uid://bsowj0m5hf24t",
+        "variables": {}
     }
 }

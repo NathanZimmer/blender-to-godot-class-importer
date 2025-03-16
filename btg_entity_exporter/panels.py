@@ -55,6 +55,13 @@ class BTGPanel(bpy.types.Panel):
         class_name = active_object.class_name
         if class_name in ('None', ''):
             return
+
+        # Prevents editing fields of an object with a different class
+        for object in context.selected_objects:
+            if object.class_name != class_name:
+                entity_box.label(text='...')
+                return
+
         # Display class properties
         for property in active_object.class_definition:
             entity_box.label(text=f'{property.name} ({property.godot_type})')
