@@ -1,6 +1,6 @@
 {
     "BTGExampleClass0": {
-        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_0.gd",
+        "uid": "uid://cslerxu3gbk31",
         "variables": {
             "string_example": {
                 "type": "String",
@@ -29,7 +29,7 @@
         }
     },
     "BTGExampleClass1": {
-        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_1.gd",
+        "uid": "uid://cdw76g81jq3sk",
         "variables": {
             "float_example": {
                 "type": "float",
@@ -44,5 +44,13 @@
                 "options": []
             }
         }
+    },
+    "BTGExampleScene": {
+        "uid": "uid://fjpvkfhwnykm",
+        "variables": {}
+    },
+    "BTGMeshExample": {
+        "uid": "uid://bsowj0m5hf24t",
+        "variables": {}
     }
 }

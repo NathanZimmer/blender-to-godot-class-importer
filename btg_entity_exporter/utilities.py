@@ -55,6 +55,17 @@ def reset_class_definition(self, context) -> None:
 
     if self.class_name == 'None':
         return
+    # elif self.data:
+    #     # If this object has a mesh, display warning
+    #     draw_func = lambda self, _: self.layout.label(
+    #         text= (
+    #                 "Object mesh data will be deleted on import if this Object's class "
+    #                 'does not inherit from MeshInstance3D'
+    #             )
+    #     )
+    #     bpy.context.window_manager.popup_menu(
+    #         draw_func=draw_func, title="Warning", icon='ERROR',
+    #     )
 
     class_def = context.scene.entity_template[self.class_name]
 
@@ -103,15 +114,15 @@ def set_search_property(self, _) -> None:
     )
 
 
-def get_variable_search_list(_, context) -> list[tuple[str, str, str]]:
+def get_variable_search_list(self, _) -> list[tuple[str, str, str]]:
     """
-    Get the keys for `context.scene.search_class_name` in blender ENUM format
+    Get the keys for `scene.search_class_name` in blender ENUM format
 
     Parameters
     ----------
-    `context`: Context of the caller of this function
+    `self`: Caller of this function
     """
-    search_class = context.scene.entity_template[context.scene.search_class_name]
+    search_class = self.entity_template[self.search_class_name]
     return [(key, key, key) for key in search_class['variables'].keys()]
 
 
@@ -132,3 +143,12 @@ def load_template(_) -> None:
     Load entity template at the start of each session
     """
     bpy.context.scene.entity_template.init_dict()
+
+
+def export_on_save(_) -> None:
+    """
+    Export entity definition whenever the file is saved
+    if `scene.export_on_save == True`
+    """
+    if bpy.context.scene.export_on_save:
+        bpy.ops.json.write()

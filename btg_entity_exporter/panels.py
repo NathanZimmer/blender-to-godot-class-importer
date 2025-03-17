@@ -35,6 +35,7 @@ class BTGPanel(bpy.types.Panel):
         import_export_box.label(text=scene_props['btg_write_path'].name)
         import_export_box.prop(context.scene, 'btg_write_path', text='')
         import_export_box.operator('json.write')
+        import_export_box.prop(context.scene, 'export_on_save')
 
         # Search UI
         layout.label(text='Select Objects')
@@ -54,6 +55,13 @@ class BTGPanel(bpy.types.Panel):
         class_name = active_object.class_name
         if class_name in ('None', ''):
             return
+
+        # Prevents editing fields of an object with a different class
+        for object in context.selected_objects:
+            if object.class_name != class_name:
+                entity_box.label(text='...')
+                return
+
         # Display class properties
         for property in active_object.class_definition:
             entity_box.label(text=f'{property.name} ({property.godot_type})')
@@ -71,7 +79,7 @@ class SelectionPopup(bpy.types.Operator):
 
     def execute(self, context):
         """
-        Use search_ scene variables to select objects with the specified entity values
+        Use `search_` scene variables to select objects with the specified entity values
         """
         search_class = context.scene.search_class_name
 
@@ -147,7 +155,7 @@ class SelectionPopup(bpy.types.Operator):
             case '_':
                 return SelectionPopup.close(x, y)
 
-    def invoke(self, context, event):
+    def invoke(self, context, _):
         """
         Invoke popup
         """

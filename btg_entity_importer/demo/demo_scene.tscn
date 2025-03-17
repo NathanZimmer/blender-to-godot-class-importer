@@ -1,27 +1,17 @@
-[gd_scene load_steps=5 format=3 uid="uid://oa6inp66pe1u"]
+[gd_scene load_steps=3 format=3 uid="uid://oa6inp66pe1u"]
 
 [ext_resource type="PackedScene" uid="uid://2cp8dpors73v" path="res://addons/blender_to_godot_pipeline/demo/demo_scene.blend" id="2_cq2yj"]
-[ext_resource type="Script" path="res://addons/blender_to_godot_pipeline/src/btg_entity_importer.gd" id="2_dqxhv"]
-[ext_resource type="Script" path="res://addons/blender_to_godot_pipeline/demo/btg_example_class_0.gd" id="3_ly43m"]
-[ext_resource type="Script" path="res://addons/blender_to_godot_pipeline/demo/btg_example_class_1.gd" id="4_82c37"]
+
+[sub_resource type="Environment" id="Environment_ojrjl"]
+background_color = Color(0.509286, 0.509286, 0.509286, 1)
+background_energy_multiplier = 1.7
 
 [node name="DemoScene" type="Node3D"]
-transform = Transform3D(1, 0, 0, 0, 0.999779, -0.0210471, 0, 0.0210471, 0.999779, 0, 0, 0)
-script = ExtResource("2_dqxhv")
-entity_definition_path = "res://addons/blender_to_godot_pipeline/demo/entity_definition.json"
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.911805, -0.159513, 0.378374, 0, 0.921464, 0.388465, -0.410623, -0.354204, 0.840195, 2.32304, 2.19434, 5.27308)
+environment = SubResource("Environment_ojrjl")
 
 [node name="demo_scene" parent="." instance=ExtResource("2_cq2yj")]
-
-[node name="BTGExample0" parent="demo_scene" index="0"]
-script = ExtResource("3_ly43m")
-string_example = "lets see if this works"
-int_example = 4
-vector_example = Vector3(3, 1, 2)
-enum_example = 1
-
-[node name="BTGExample1" parent="demo_scene" index="1"]
-script = ExtResource("4_82c37")
-float_example = 0.25
-custom_float_example = -1.5
 
 [editable path="demo_scene"]

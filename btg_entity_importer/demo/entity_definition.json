@@ -1,11 +1,11 @@
 {
     "BTGExample0": {
         "class": "BTGExampleClass0",
-        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_0.gd",
+        "uid": "uid://cslerxu3gbk31",
         "variables": {
             "string_example": {
                 "type": "String",
-                "value": "lets see if this works"
+                "value": "auto-import test 4"
             },
             "int_example": {
                 "type": "int",
@@ -13,17 +13,17 @@
             },
             "vector_example": {
                 "type": "Vector3",
-                "value": "(3.0, 1.0, 2.0)"
+                "value": "(1.0, 2.0, 3.0)"
             },
             "enum_example": {
                 "type": "enum",
-                "value": 1
+                "value": "OPTION_2"
             }
         }
     },
     "BTGExample1": {
         "class": "BTGExampleClass1",
-        "uid": "res://addons/blender_to_godot_pipeline/demo/btg_example_class_1.gd",
+        "uid": "uid://cdw76g81jq3sk",
         "variables": {
             "float_example": {
                 "type": "float",
@@ -34,5 +34,15 @@
                 "value": "1.5"
             }
         }
+    },
+    "BTGExample2": {
+        "class": "BTGExampleScene",
+        "uid": "uid://fjpvkfhwnykm",
+        "variables": {}
+    },
+    "BTGMeshExample": {
+        "class": "BTGMeshExample",
+        "uid": "uid://bsowj0m5hf24t",
+        "variables": {}
     }
 }

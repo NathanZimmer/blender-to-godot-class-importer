@@ -29,6 +29,9 @@ def register():
     if utilities.load_template not in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.append(utilities.load_template)
 
+    if utilities.export_on_save not in bpy.app.handlers.save_post:
+        bpy.app.handlers.save_post.append(utilities.export_on_save)
+
     # File IO
     bpy.types.Scene.entity_def_path = bpy.props.StringProperty(
         name='Godot entity definition path',
@@ -42,6 +45,11 @@ def register():
             'this JSON in order to use the import script in Godot.'
         ),
         subtype='FILE_PATH',
+    )
+    bpy.types.Scene.export_on_save = bpy.props.BoolProperty(
+        name='Export on save',
+        description=('Write BTG entity definition JSON whenever the file is saved.'),
+        default=False,
     )
 
     # Entity definition
@@ -109,9 +117,13 @@ def unregister():
     if utilities.load_template in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(utilities.load_template)
 
+    if utilities.export_on_save in bpy.app.handlers.save_post:
+        bpy.app.handlers.save_post.remove(utilities.export_on_save)
+
     # File IO
     del bpy.types.Scene.entity_def_path
     del bpy.types.Scene.btg_write_path
+    del bpy.types.Scene.export_on_save
 
     # Entity definition
     del bpy.types.Object.class_name
