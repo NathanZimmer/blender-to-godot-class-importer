@@ -5,7 +5,7 @@
         "variables": {
             "string_example": {
                 "type": "String",
-                "value": "auto-import test 4"
+                "value": "auto-import test 6"
             },
             "int_example": {
                 "type": "int",

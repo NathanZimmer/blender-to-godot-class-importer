@@ -31,21 +31,22 @@ func _post_process(scene):
     json.parse(import_text)
     var entity_def = json.data
 
-    var num_failures = import_entities_from_def(entity_def, scene)
+    var num_failures = _import_entities_from_def(entity_def, scene)
     if num_failures > 0:
         print("Finished import with %d failures (see warnings)" % num_failures)
 
     return scene
 
 
-## Navigate down node tree and assign classes/variables based on the
+## Recursively Navigate down node tree and assign classes/variables based on the
 ## entity definition JSON. [br]
 ## `entity_def`: Dictionary rep of the entity definition JSON [br]
-## `node`: The starting node for the replacements (inclusive)
-static func import_entities_from_def(
+## `node`: The starting node for the replacements (inclusive) [br]
+## Returns the number of nodes that failed to import from the end of
+## the tree up to `node`.
+static func _import_entities_from_def(
     entity_def: Dictionary,
     node: Node3D,
-    added_nodes: Array[Node] = [],
 ) -> int:
     var num_failures = 0
     var node_name = node.name
@@ -93,7 +94,7 @@ static func import_entities_from_def(
 
         # Set owner of new nodes from instantiated scene
         for child in tscn_children:
-            recursive_set_owner(child, node.get_owner())
+            _recursive_set_owner(child, node.get_owner())
 
         # Assign values
         var variables = entity_def[node_name]["variables"]
@@ -126,26 +127,25 @@ static func import_entities_from_def(
                     continue
                 node.set(variable, converted_value)
 
-    added_nodes.append_array(tscn_children)
     # Recursively search children
     if node.get_children().is_empty():
         return num_failures
     for child in node.get_children():
         if child.get_name() not in entity_def:
             continue
-        num_failures += import_entities_from_def(entity_def, child, added_nodes)
+        num_failures += _import_entities_from_def(entity_def, child)
 
     return num_failures
 
 
 ## Set the owner of `node` and all nodes down its tree to `owner`
-static func recursive_set_owner(node: Node3D, owner: Node3D):
+static func _recursive_set_owner(node: Node3D, owner: Node3D):
     node.set_owner(owner)
     var children = node.get_children()
     if children.is_empty():
         return
     for child in children:
-        recursive_set_owner(child, owner)
+        _recursive_set_owner(child, owner)
 
 
 static func _cast_to_type(node: Node, value, type: String):
