@@ -1,4 +1,7 @@
-## Run BTG import on `.blend` and `.glb` files if the import options specifies an `entity_definition`
+## Blender-to-Godot entity importer. Reads from an entity definition JSON and
+## assigns class/values to nodes in the Godot scene corresponding to the
+## objects in Blender scene. [br]
+## Runs BTG import on `.blend` and `.glb` files if the import options specifies an `entity_definition`
 class_name BTGImporter extends EditorScenePostImportPlugin
 
 var run_btg_import = false
