@@ -9,8 +9,8 @@ def refresh_class_definitions() -> None:
     """
     Compare `object.class_definition` values to `scene.entity_template`.
     Check if:
-    * class was removed
-    * class order was changed
+    * class was removed from entity template
+    * class order was changed in entity template
     * class variables were reordered/changed
     """
     scene = bpy.context.scene

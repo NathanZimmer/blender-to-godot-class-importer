@@ -4,12 +4,12 @@
 ## Runs BTG import on `.blend` and `.glb` files if the import options specifies an `entity_definition`
 class_name BTGImporter extends EditorScenePostImportPlugin
 
-var run_btg_import = false
+var _run_btg_import = false
 
 
 func _get_import_options(path):
     if path.get_extension() in ["blend", "glb"]:
-        run_btg_import = true
+        _run_btg_import = true
         add_import_option_advanced(
             TYPE_STRING, "entity_definition", "", PROPERTY_HINT_FILE, "*.json"
         )
@@ -160,7 +160,17 @@ static func _cast_to_type(node: Node, value, type: String):
         value = value.replace("(", "[")
         value = value.replace(")", "]")
         value = str_to_var(value)
-        return Vector3i(value)
+        return Vector3i(value[0], value[1], value[2])
+    if type == "Vector2":
+        value = value.replace("(", "[")
+        value = value.replace(")", "]")
+        value = str_to_var(value)
+        return Vector2(value[0], value[1])
+    if type == "Vector2i":
+        value = value.replace("(", "[")
+        value = value.replace(")", "]")
+        value = str_to_var(value)
+        return Vector2i(value[0], value[1])
     if node.has_method(type):
         value = node.call(type, value)
         return value

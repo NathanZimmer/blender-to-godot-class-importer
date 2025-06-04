@@ -36,12 +36,12 @@ class EntityTemplateReader(bpy.types.Operator):
     @staticmethod
     def read_template_json() -> None:
         """
-        Read json from `scene.entity_def_path` into `scene.entity_template`
+        Read json from `scene.entity_template_path` into `scene.entity_template`
         """
-        entity_def_path = bpy.context.scene.entity_def_path
-        if entity_def_path[:2] == '//':
-            entity_def_path = bpy.path.abspath('//') + entity_def_path[2:]
-        with open(entity_def_path) as entity_json:
+        entity_template_path = bpy.context.scene.entity_template_path
+        if entity_template_path[:2] == '//':
+            entity_template_path = bpy.path.abspath('//') + entity_template_path[2:]
+        with open(entity_template_path) as entity_json:
             # Place 'None' at the first index for defaulting
             bpy.context.scene.entity_template.reset({'None': ''} | json.load(entity_json))
 

@@ -33,9 +33,9 @@ def register():
         bpy.app.handlers.save_post.append(utilities.export_on_save)
 
     # File IO
-    bpy.types.Scene.entity_def_path = bpy.props.StringProperty(
-        name='Godot entity definition path',
-        description='The path of your Godot entity definition JSON',
+    bpy.types.Scene.entity_template_path = bpy.props.StringProperty(
+        name='Godot entity template path',
+        description='The path of your Godot entity template JSON',
         subtype='FILE_PATH',
     )
     bpy.types.Scene.btg_write_path = bpy.props.StringProperty(
@@ -121,7 +121,7 @@ def unregister():
         bpy.app.handlers.save_post.remove(utilities.export_on_save)
 
     # File IO
-    del bpy.types.Scene.entity_def_path
+    del bpy.types.Scene.entity_template_path
     del bpy.types.Scene.btg_write_path
     del bpy.types.Scene.export_on_save
 

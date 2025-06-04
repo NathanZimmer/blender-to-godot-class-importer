@@ -29,8 +29,8 @@ class BTGPanel(bpy.types.Panel):
         # Import and export UI
         layout.label(text='Import and Export')
         import_export_box = layout.box()
-        import_export_box.label(text=scene_props['entity_def_path'].name)
-        import_export_box.prop(context.scene, 'entity_def_path', text='')
+        import_export_box.label(text=scene_props['entity_template_path'].name)
+        import_export_box.prop(context.scene, 'entity_template_path', text='')
         import_export_box.operator('json.read')
         import_export_box.label(text=scene_props['btg_write_path'].name)
         import_export_box.prop(context.scene, 'btg_write_path', text='')
@@ -68,7 +68,7 @@ class BTGPanel(bpy.types.Panel):
             entity_box.prop(property, property.string_ref, text='')
 
 
-# NOTE: This is an operator, but it creates a GUI element, so it fits better here
+# This is an operator, but it creates a GUI element, so it fits better here
 class SelectionPopup(bpy.types.Operator):
     """
     Search for objects in the scene based on class name or class variable value
