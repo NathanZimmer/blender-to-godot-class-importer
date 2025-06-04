@@ -18,6 +18,16 @@ class PropTypes(enum.Enum):
     ENUM = 'm_emum'
 
 
+# class GodotPropTypes(enum.Enum):
+#     BOOL = 'bool'
+#     INT = 'int'
+#     FLOAT = 'float'
+#     VECTOR_3 = 'Vector3'
+#     VECTOR_3 = 'Vector3'
+#     VECTOR_2 = 'Vector2'
+#     VECTOR_2_I = 'Vector2i'
+#     ENUM = 'enum'
+
 class EntityTemplate(bpy.types.PropertyGroup):
     """
     Wrapper for entity template JSON file

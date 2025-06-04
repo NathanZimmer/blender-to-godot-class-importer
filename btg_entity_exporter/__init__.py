@@ -14,7 +14,7 @@ if 'bpy' in locals():
 bl_info = {
     'name': 'Blender To Godot Pipeline',
     'author': 'Nathan Zimmer',
-    'version': (0, 1, 0),
+    'version': (1, 0, 0),
     'blender': (4, 2, 0),
     'category': 'Object',
 }
