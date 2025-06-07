@@ -6,4 +6,5 @@ enum ExampleEnum { OPTION_1, OPTION_2, OPTION_3 }
 @export var string_example: String = "string example"
 @export var int_example: int = 1
 @export var vector_example: Vector3 = Vector3(1, 2, 3)
+@export var vector_2_example: Vector2i = Vector2i(2, 1)
 @export var enum_example: ExampleEnum = ExampleEnum.OPTION_1

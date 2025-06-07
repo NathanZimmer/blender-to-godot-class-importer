@@ -5,7 +5,7 @@
         "variables": {
             "string_example": {
                 "type": "String",
-                "value": "auto-import test 6"
+                "value": "string example test"
             },
             "int_example": {
                 "type": "int",
@@ -13,11 +13,15 @@
             },
             "vector_example": {
                 "type": "Vector3",
-                "value": "(1.0, 2.0, 3.0)"
+                "value": "(3.0, 2.0, 1.0)"
+            },
+            "vector_2_example": {
+                "type": "Vector2i",
+                "value": "(2, 3)"
             },
             "enum_example": {
                 "type": "enum",
-                "value": "OPTION_2"
+                "value": "OPTION_1"
             }
         }
     },
@@ -27,11 +31,11 @@
         "variables": {
             "float_example": {
                 "type": "float",
-                "value": 0.25
+                "value": 0.5
             },
             "custom_float_example": {
                 "type": "custom_float",
-                "value": "1.5"
+                "value": "0.5"
             }
         }
     },
@@ -44,5 +48,25 @@
         "class": "BTGMeshExample",
         "uid": "uid://bsowj0m5hf24t",
         "variables": {}
+    },
+    "Area3D": {
+        "class": "Area3D",
+        "uid": "",
+        "variables": {
+            "collision_layer": {
+                "type": "int",
+                "value": 3
+            }
+        }
+    },
+    "PrimitiveCollisionShape": {
+        "class": "PrimitiveCollisionShape3D",
+        "uid": "uid://bk8pujn7tv45v",
+        "variables": {
+            "_primitive_type": {
+                "type": "enum",
+                "value": "BOX"
+            }
+        }
     }
 }

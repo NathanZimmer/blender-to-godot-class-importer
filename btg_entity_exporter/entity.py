@@ -15,7 +15,9 @@ class PropTypes(enum.Enum):
     BOOL = 'm_bool'
     INT_VECTOR = 'm_int_vector'
     FLOAT_VECTOR = 'm_float_vector'
-    ENUM = 'm_emum'
+    INT_VECTOR_2 = 'm_int_vector_2'
+    FLOAT_VECTOR_2 = 'm_float_vector_2'
+    ENUM = 'm_enum'
 
 
 # class GodotPropTypes(enum.Enum):
@@ -123,21 +125,17 @@ class EntityProperty(bpy.types.PropertyGroup):
                 self.m_float = value
                 self.m_type = PropTypes.FLOAT.value
             case 'Vector3':
-                self.m_float_vector.size = 3
                 self.m_float_vector = value
                 self.m_type = PropTypes.FLOAT_VECTOR.value
             case 'Vector3i':
-                self.m_int_vector.size = 3
                 self.m_int_vector = value
                 self.m_type = PropTypes.INT_VECTOR.value
             case 'Vector2':
-                self.m_float_vector.size = 2
-                self.m_float_vector = value
-                self.m_type = PropTypes.FLOAT_VECTOR.value
+                self.m_float_vector_2 = value
+                self.m_type = PropTypes.FLOAT_VECTOR_2.value
             case 'Vector2i':
-                self.m_int_vector.size = 2
-                self.m_int_vector = value
-                self.m_type = PropTypes.INT_VECTOR.value
+                self.m_int_vector_2 = value
+                self.m_type = PropTypes.INT_VECTOR_2.value
             case 'enum':
                 self.m_enum_items = json.dumps(items)
                 self.m_enum = value
@@ -182,7 +180,9 @@ class EntityProperty(bpy.types.PropertyGroup):
             ('m_bool', 'm_bool', 'm_bool'),
             ('m_int_vector', 'm_int_vector', 'm_int_vector'),
             ('m_float_vector', 'm_float_vector', 'm_float_vector'),
-            ('m_emum', 'm_emum', 'm_emum'),
+            ('m_int_vector_2', 'm_int_vector_2', 'm_int_vector_2'),
+            ('m_float_vector_2', 'm_float_vector_2', 'm_float_vector_2'),
+            ('m_enum', 'm_enum', 'm_enum'),
         ],
     )  # type: ignore
 
@@ -212,6 +212,16 @@ class EntityProperty(bpy.types.PropertyGroup):
     )  # type: ignore
     m_float_vector: bpy.props.FloatVectorProperty(
         name='Vector3',
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    m_int_vector_2: bpy.props.IntVectorProperty(
+        name='Vector2i',
+        size=2,
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    m_float_vector_2: bpy.props.FloatVectorProperty(
+        name='Vector2',
+        size=2,
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
     m_enum: bpy.props.EnumProperty(

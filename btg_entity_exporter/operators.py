@@ -65,7 +65,7 @@ class EntityImportWriter(bpy.types.Operator):
             # Convert to Godot naming standards
             object.name.replace('.', '_'): {
                 'class': object.class_name,
-                'uid': context.scene.entity_template[object.class_name]['uid'],
+                'uid': context.scene.entity_template[object.class_name].get('uid', ''),
                 'variables': {
                     prop.name: {
                         'type': prop.godot_type,

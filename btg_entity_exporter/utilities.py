@@ -73,7 +73,6 @@ def reset_class_definition(self, context) -> None:
         # var_type, var_default, var_desc, var_items = var_def
         var_type = var_def['type']
         var_default = var_def['default']
-        var_desc = var_def['description']
         var_desc = var_def.get('description', '')
         var_items = var_def.get('options', [])
 

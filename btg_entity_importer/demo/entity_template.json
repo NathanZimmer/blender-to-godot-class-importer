@@ -20,6 +20,12 @@
                 "description": "",
                 "options": []
             },
+            "vector_2_example": {
+                "type": "Vector2i",
+                "default": [2, 1],
+                "description": "",
+                "options": []
+            },
             "enum_example": {
                 "type": "enum",
                 "default": "OPTION_1",
@@ -52,5 +58,25 @@
     "BTGMeshExample": {
         "uid": "uid://bsowj0m5hf24t",
         "variables": {}
+    },
+    "Area3D": {
+        "variables": {
+            "collision_layer": {
+                "type": "int",
+                "default": 1,
+                "description": ""
+            }
+        }
+    },
+    "PrimitiveCollisionShape3D": {
+        "uid": "uid://bk8pujn7tv45v",
+        "variables": {
+            "_primitive_type": {
+                "type": "enum",
+                "default": "BOX",
+                "description": "",
+                "options": ["BOX", "SPHERE"]
+            }
+        }
     }
 }

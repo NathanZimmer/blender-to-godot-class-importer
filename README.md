@@ -175,3 +175,5 @@ TODO
   * Something about using the Blender asset library to achieve something similar to Godot's scenes
 * revise gdscript code
 * finish both demo scenes
+* Note downsides of using this program
+  * Biggest being there is no automatic way to convert to a Godot primitive shape

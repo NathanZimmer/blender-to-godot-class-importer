@@ -185,8 +185,6 @@ class SelectionPopup(bpy.types.Operator):
             expanded_compare_types = (
                 entity.PropTypes.INT.value,
                 entity.PropTypes.FLOAT.value,
-                entity.PropTypes.FLOAT_VECTOR.value,
-                entity.PropTypes.INT_VECTOR.value,
             )
             if search_property.string_ref in expanded_compare_types:
                 box.prop(context.scene, 'comparison_type', text='')
