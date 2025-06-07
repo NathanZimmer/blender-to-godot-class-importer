@@ -56,17 +56,18 @@ static func _import_entities_from_def(
     var tscn_children: Array[Node] = []
     if node_name in entity_def:
         var node_class_name = entity_def[node_name]["class"]
-        var node_class_uid = entity_def[node_name]["uid"]
+        var node_class_uid = entity_def[node_name].get("uid", "")
 
         # Populate new node
-        var uid = ResourceUID.text_to_id(node_class_uid)
-        var node_class_full_path = ResourceUID.get_id_path(uid)
-        if node_class_full_path.get_extension() == "gd":
-            new_node = load(node_class_uid).new()
+        if not node_class_uid.is_empty():
+            var uid = ResourceUID.text_to_id(node_class_uid)
+            var node_class_full_path = ResourceUID.get_id_path(uid)
+            if node_class_full_path.get_extension() == "gd":
+                new_node = load(node_class_uid).new()
+            else:
+                new_node = load(node_class_uid).instantiate()
+                tscn_children = new_node.get_children()
         else:
-            new_node = load(node_class_uid).instantiate()
-            tscn_children = new_node.get_children()
-        if new_node == null:
             new_node = ClassDB.instantiate(node_class_name)
             if new_node == null:
                 push_warning(
@@ -112,6 +113,7 @@ static func _import_entities_from_def(
             var type = variables[variable]["type"]
             var value = variables[variable]["value"]
 
+            # TODO: Figure out if we can set non-export vars
             if type in ["int", "String", "bool", "float", "enum"]:
                 node.set(variable, value)
             else:
