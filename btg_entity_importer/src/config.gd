@@ -1,11 +1,11 @@
 @tool
 extends EditorPlugin
 
-var _btg_importer
+var _btg_importer: BTGImporter
 
 
 func _enter_tree() -> void:
-    _btg_importer = preload("uid://bu1bg70u1dtyq").new()
+    _btg_importer = BTGImporter.new()
     add_scene_post_import_plugin(_btg_importer)
 
 
