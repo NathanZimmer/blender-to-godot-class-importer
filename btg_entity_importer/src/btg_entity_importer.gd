@@ -113,7 +113,6 @@ static func _import_entities_from_def(
             var type = variables[variable]["type"]
             var value = variables[variable]["value"]
 
-            # TODO: Figure out if we can set non-export vars
             if type in ["int", "String", "bool", "float", "enum"]:
                 node.set(variable, value)
             else:
