@@ -170,15 +170,19 @@ class SelectionPopup(bpy.types.Operator):
         layout.label(text='Search by...')
         layout.prop(context.scene, 'search_type', text='')
 
-        layout.label(text='Parameters')
-        box = layout.box()
-        box.prop(context.scene, 'search_class_name', text='')
+        layout.label(text='Class')
+        layout.box().prop(context.scene, 'search_class_name', text='')
 
         if context.scene.search_class_name == 'None':
             return
 
         if context.scene.search_type == 'var_val':
-            box.prop(context.scene, 'search_var_name', text='')
+            layout.label(text='Parameters')
+            var_box = layout.box()
+
+            row = var_box.row()
+            row.alignment = 'CENTER'
+            row.prop(context.scene, 'search_var_name', text='')
 
             search_property = context.scene.search_property
             # Types that we want to show the expanded set of comparison options for
@@ -187,9 +191,11 @@ class SelectionPopup(bpy.types.Operator):
                 entity.PropTypes.FLOAT.value,
             )
             if search_property.string_ref in expanded_compare_types:
-                box.prop(context.scene, 'comparison_type', text='')
+                row.prop(context.scene, 'comparison_type', text='')
+            else:
+                row.label(text='==', )
 
-            box.prop(search_property, search_property.string_ref, text='')
+            row.prop(search_property, search_property.string_ref, text='')
 
 
 def register():

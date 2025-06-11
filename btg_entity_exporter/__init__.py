@@ -26,6 +26,7 @@ def register():
     operators.register()
     panels.register()
 
+    # load/save functions
     if utilities.load_template not in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.append(utilities.load_template)
 
@@ -114,6 +115,7 @@ def unregister():
     operators.unregister()
     panels.unregister()
 
+    # load/save functions
     if utilities.load_template in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(utilities.load_template)
 
