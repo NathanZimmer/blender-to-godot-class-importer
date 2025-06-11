@@ -3,6 +3,8 @@ Utilitiy functions for operating on `bpy.context` `scene` and `object` variables
 """
 
 import bpy
+import json
+from . import entity
 
 
 def refresh_class_definitions() -> None:
@@ -74,7 +76,7 @@ def reset_class_definition(self, context) -> None:
         var_type = var_def['type']
         var_default = var_def['default']
         var_desc = var_def.get('description', '')
-        var_items = var_def.get('options', [])
+        var_items = var_def.get('options', {})
 
         self.class_definition.add(
             name=var_name,
@@ -100,7 +102,7 @@ def set_search_property(self, _) -> None:
     var_type = var_def['type']
     var_val = var_def['default']
     var_desc = var_def.get('description', '')
-    var_items = var_def.get('options', [])
+    var_items = var_def.get('options', {})
 
     self.comparison_type = '=='
 
@@ -134,6 +136,21 @@ def get_entity_list(_, context) -> list[tuple[str, str, str]]:
     `context`: Context of the caller of this function
     """
     return [(key, key, key) for key in context.scene.entity_template.keys()]
+
+
+def to_json_type(prop: entity.EntityProperty) -> int | str | bool | float:
+    """
+    TODO
+    """
+    json_types = (int, str, bool, float)  # Values that can be translated to JSON format
+
+    if prop.string_ref == 'm_enum':
+        return prop.get_enum_value()
+
+    if type(prop.value) in json_types:
+        return prop.value
+
+    return str(prop.value[0:])
 
 
 @bpy.app.handlers.persistent

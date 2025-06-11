@@ -81,7 +81,7 @@ class EntityProperty(bpy.types.PropertyGroup):
         ENUM property
         """
         items = json.loads(self.m_enum_items)
-        return [(str(val), str(val), str(val)) for val in items]
+        return [(str(val), str(val), str(val)) for val in items.keys()]
 
     def init(
         self,
@@ -89,7 +89,7 @@ class EntityProperty(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = None,
+        items: dict[str, int] = None,
     ) -> None:
         """
         Initialize object
@@ -143,6 +143,12 @@ class EntityProperty(bpy.types.PropertyGroup):
             case _:
                 self.m_string = value
                 self.m_type = PropTypes.STRING.value
+
+    def get_enum_value(self) -> int | None:
+        """
+        TODO
+        """
+        return json.loads(self.m_enum_items).get(self.value, None)
 
     @property
     def string_ref(self) -> str:
@@ -252,7 +258,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = None,
+        items: dict[str, int] = None,
     ) -> None:
         """
         Add a variable to this object's variable list.

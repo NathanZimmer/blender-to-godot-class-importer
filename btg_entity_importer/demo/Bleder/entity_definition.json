@@ -5,23 +5,23 @@
         "variables": {
             "string_example": {
                 "type": "String",
-                "value": "string example test"
+                "value": "string example"
             },
             "int_example": {
                 "type": "int",
-                "value": 4
+                "value": 1
             },
             "vector_example": {
                 "type": "Vector3",
-                "value": "(3.0, 2.0, 1.0)"
+                "value": "(1.0, 2.0, 3.0)"
             },
             "vector_2_example": {
                 "type": "Vector2i",
-                "value": "(2, 3)"
+                "value": "(2, 1)"
             },
             "enum_example": {
                 "type": "enum",
-                "value": "OPTION_1"
+                "value": 2
             }
         }
     },
@@ -55,7 +55,7 @@
         "variables": {
             "collision_layer": {
                 "type": "int",
-                "value": 3
+                "value": 1
             }
         }
     },
@@ -65,7 +65,7 @@
         "variables": {
             "_primitive_type": {
                 "type": "enum",
-                "value": "BOX"
+                "value": 0
             }
         }
     }

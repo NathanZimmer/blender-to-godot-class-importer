@@ -4,33 +4,24 @@
         "variables": {
             "string_example": {
                 "type": "String",
-                "default": "string example",
-                "description": "",
-                "options": []
+                "default": "string example"
             },
             "int_example": {
                 "type": "int",
-                "default": 1,
-                "description": "",
-                "options": []
+                "default": 1
             },
             "vector_example": {
                 "type": "Vector3",
-                "default": [1, 2, 3],
-                "description": "",
-                "options": []
+                "default": [1, 2, 3]
             },
             "vector_2_example": {
                 "type": "Vector2i",
-                "default": [2, 1],
-                "description": "",
-                "options": []
+                "default": [2, 1]
             },
             "enum_example": {
                 "type": "enum",
                 "default": "OPTION_1",
-                "description": "",
-                "options": ["OPTION_1", "OPTION_2", "OPTION_3"]
+                "options": {"OPTION_1": 0, "OPTION_2": 1, "OPTION_3": 2}
             }
         }
     },
@@ -39,15 +30,11 @@
         "variables": {
             "float_example": {
                 "type": "float",
-                "default": 0.5,
-                "description": "",
-                "options": []
+                "default": 0.5
             },
             "custom_float_example": {
                 "type": "custom_float",
-                "default": "0.5",
-                "description": "",
-                "options": []
+                "default": "0.5"
             }
         }
     },
@@ -63,8 +50,7 @@
         "variables": {
             "collision_layer": {
                 "type": "int",
-                "default": 1,
-                "description": ""
+                "default": 1
             }
         }
     },
@@ -74,8 +60,7 @@
             "_primitive_type": {
                 "type": "enum",
                 "default": "BOX",
-                "description": "",
-                "options": ["BOX", "SPHERE"]
+                "options": {"BOX": 0, "SPHERE": 1}
             }
         }
     }

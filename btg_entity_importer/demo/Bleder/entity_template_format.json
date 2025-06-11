@@ -6,7 +6,7 @@
                 "type": "",
                 "default": "",
                 "description": "",
-                "options": []
+                "options": {"OPTION_0": 0}
             }
         }
     }

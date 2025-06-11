@@ -58,7 +58,6 @@ class EntityImportWriter(bpy.types.Operator):
         """
         Write entity definitions import JSON used by Godot
         """
-        json_types = (int, str, bool, float)  # Values that can be translated to JSON format
 
         # Construct JSON
         btg_json = {
@@ -69,11 +68,7 @@ class EntityImportWriter(bpy.types.Operator):
                 'variables': {
                     prop.name: {
                         'type': prop.godot_type,
-                        'value': (
-                            prop.value
-                            if type(prop.value) in json_types  # Convert non-JSON vartypes to string
-                            else str(prop.value[0:])
-                        ),
+                        'value': utilities.to_json_type(prop),
                     }
                     for prop in object.class_definition
                 },
