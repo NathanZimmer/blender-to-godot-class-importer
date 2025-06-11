@@ -35,27 +35,27 @@ def register():
 
     # File IO
     bpy.types.Scene.entity_template_path = bpy.props.StringProperty(
-        name='Godot entity template path',
+        name='Entity template path',
         description='The path of your Godot entity template JSON',
         subtype='FILE_PATH',
     )
     bpy.types.Scene.btg_write_path = bpy.props.StringProperty(
-        name='BTG import write-path',
+        name='Entity definition write-path',
         description=(
-            'The path to write your BTG import JSON. You have to write '
-            'this JSON in order to use the import script in Godot.'
+            'The path to write your entity definition import JSON. You have to write '
+            'out this JSON in order to use the import script in Godot.'
         ),
         subtype='FILE_PATH',
     )
     bpy.types.Scene.export_on_save = bpy.props.BoolProperty(
         name='Export on save',
-        description=('Write BTG entity definition JSON whenever the file is saved.'),
+        description=('Write out entity definition JSON whenever the file is saved.'),
         default=False,
     )
 
     # Entity definition
     bpy.types.Object.class_name = bpy.props.EnumProperty(
-        items=utilities.get_entity_list,
+        items=utilities.get_class_list,
         update=utilities.reset_class_definition,
         description='The Godot class of this object',
         default=0,
@@ -77,7 +77,7 @@ def register():
     bpy.types.Scene.search_class_name = bpy.props.EnumProperty(
         name='Godot Entities',
         description='The Godot class to search for',
-        items=utilities.get_entity_list,
+        items=utilities.get_class_list,
         update=utilities.set_search_property,
         default=0,
     )

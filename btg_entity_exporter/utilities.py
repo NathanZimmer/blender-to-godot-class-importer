@@ -127,7 +127,7 @@ def get_variable_search_list(self, _) -> list[tuple[str, str, str]]:
     return [(key, key, key) for key in search_class['variables'].keys()]
 
 
-def get_entity_list(_, context) -> list[tuple[str, str, str]]:
+def get_class_list(_, context) -> list[tuple[str, str, str]]:
     """
     Get the keys for `context.object.class_name` in blender ENUM format
 

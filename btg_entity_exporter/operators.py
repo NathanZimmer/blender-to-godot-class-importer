@@ -5,6 +5,8 @@
 import bpy
 import json
 import traceback
+from pathlib import Path
+# import shutil
 from . import utilities
 
 
@@ -14,7 +16,7 @@ class EntityTemplateReader(bpy.types.Operator):
     """
 
     bl_idname = 'json.read'
-    bl_label = 'Read entity JSON'
+    bl_label = 'Read entity template'
 
     def execute(self, context):
         """
@@ -48,11 +50,11 @@ class EntityTemplateReader(bpy.types.Operator):
 
 class EntityImportWriter(bpy.types.Operator):
     """
-    Write BTG import JSON from object entity defintions
+    Write import JSON from object entity defintions
     """
 
     bl_idname = 'json.write'
-    bl_label = 'Write BTG import JSON'
+    bl_label = 'Write entity definition'
 
     def execute(self, context):
         """
@@ -79,10 +81,15 @@ class EntityImportWriter(bpy.types.Operator):
 
         # Write JSON
         try:
-            btg_write_path = bpy.context.scene.btg_write_path
-            if btg_write_path[:2] == '//':
-                btg_write_path = bpy.path.abspath('//') + btg_write_path[2:]
-            with open(btg_write_path, 'w+') as file:
+            if bpy.context.scene.btg_write_path[:2] == '//':
+                btg_write_path = Path(bpy.path.abspath('//') + bpy.context.scene.btg_write_path[2:])
+            else:
+                btg_write_path = Path(bpy.context.scene.btg_write_path)
+
+            # if btg_write_path.exists():
+            #     shutil.copy(btg_write_path, btg_write_path.as_posix() + '1')
+
+            with btg_write_path.open('w+') as file:
                 json.dump(btg_json, file, indent=4)
 
             self.report({'DEBUG'}, f'{btg_json=}')

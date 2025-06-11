@@ -21,7 +21,7 @@
             },
             "enum_example": {
                 "type": "enum",
-                "value": 2
+                "value": 0
             }
         }
     },
@@ -33,9 +33,9 @@
                 "type": "float",
                 "value": 0.5
             },
-            "custom_float_example": {
-                "type": "custom_float",
-                "value": "0.5"
+            "custom_float()": {
+                "type": "float",
+                "value": 0.5
             }
         }
     },
@@ -63,7 +63,7 @@
         "class": "PrimitiveCollisionShape3D",
         "uid": "uid://bk8pujn7tv45v",
         "variables": {
-            "_primitive_type": {
+            "set_primitive()": {
                 "type": "enum",
                 "value": 0
             }

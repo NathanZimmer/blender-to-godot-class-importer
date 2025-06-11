@@ -32,9 +32,9 @@
                 "type": "float",
                 "default": 0.5
             },
-            "custom_float_example": {
-                "type": "custom_float",
-                "default": "0.5"
+            "custom_float()": {
+                "type": "float",
+                "default": 0.5
             }
         }
     },
@@ -57,7 +57,7 @@
     "PrimitiveCollisionShape3D": {
         "uid": "uid://bk8pujn7tv45v",
         "variables": {
-            "_primitive_type": {
+            "set_primitive()": {
                 "type": "enum",
                 "default": "BOX",
                 "options": {"BOX": 0, "SPHERE": 1}

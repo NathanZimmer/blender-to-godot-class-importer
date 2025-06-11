@@ -100,33 +100,67 @@ static func _import_entities_from_def(
 
         var variables = entity_def[node.name]["variables"]
         for variable in variables:
-            if not variable in node:
-                push_warning(
-                    (
-                        "Missing variable definition! Failed on (Node: %s, variable: %s)"
-                        % [node.name, variable]
-                    )
-                )
-                num_failures += 1
-                continue
 
-            var type = variables[variable]["type"]
-            var value = variables[variable]["value"]
+            var is_func: bool = variable.ends_with("()")
 
-            if type in ["int", "String", "bool", "float", "enum"]:
-                node.set(variable, value)
-            else:
-                var converted_value = _cast_to_type(node, value, type)
-                if converted_value == null:
+            if is_func:
+                var func_call: String = variable.substr(0, variable.length() - 2)
+
+                if not node.has_method(func_call):
                     push_warning(
                         (
-                            "Failed to cast variable type! Failed on (Node: %s, type: %s, variable: %s)"
-                            % [node.name, type, variable]
+                            "Missing function definition! Failed on (Node: %s, function: %s)"
+                            % [node.name, variable]
                         )
                     )
                     num_failures += 1
                     continue
-                node.set(variable, converted_value)
+
+                var type = variables[variable]["type"]
+                var value = variables[variable]["value"]
+
+                if type in ["int", "String", "bool", "float", "enum"]:
+                    node.call(func_call, value)
+                else:
+                    var converted_value = _cast_to_type(value, type)
+                    if converted_value == null:
+                        push_warning(
+                            (
+                                "Failed to cast variable type! Failed on (Node: %s, type: %s, variable: %s)"
+                                % [node.name, type, variable]
+                            )
+                        )
+                        num_failures += 1
+                        continue
+                    node.call(func_call, converted_value)
+            else:
+                if not variable in node:
+                    push_warning(
+                        (
+                            "Missing variable definition! Failed on (Node: %s, variable: %s)"
+                            % [node.name, variable]
+                        )
+                    )
+                    num_failures += 1
+                    continue
+
+                var type = variables[variable]["type"]
+                var value = variables[variable]["value"]
+
+                if type in ["int", "String", "bool", "float", "enum"]:
+                    node.set(variable, value)
+                else:
+                    var converted_value = _cast_to_type(value, type)
+                    if converted_value == null:
+                        push_warning(
+                            (
+                                "Failed to cast variable type! Failed on (Node: %s, type: %s, variable: %s)"
+                                % [node.name, type, variable]
+                            )
+                        )
+                        num_failures += 1
+                        continue
+                    node.set(variable, converted_value)
 
     if node.get_children().is_empty():
         return num_failures
@@ -146,7 +180,7 @@ static func _recursive_set_owner(node: Node3D, owner: Node3D):
         _recursive_set_owner(child, owner)
 
 
-static func _cast_to_type(node: Node, value, type: String):
+static func _cast_to_type(value, type: String):
     if type == "list":
         return str_to_var(value)
     if type == "Vector3":
@@ -169,8 +203,5 @@ static func _cast_to_type(node: Node, value, type: String):
         value = value.replace(")", "]")
         value = str_to_var(value)
         return Vector2i(value[0], value[1])
-    if node.has_method(type):
-        value = node.call(type, value)
-        return value
 
     return null
