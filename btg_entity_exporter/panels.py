@@ -75,7 +75,7 @@ class SelectionPopup(bpy.types.Operator):
     """
 
     bl_idname = 'select_popup.open'
-    bl_label = 'Find objects by...'
+    bl_label = 'Select objects by...'
 
     def execute(self, context):
         """
@@ -98,16 +98,17 @@ class SelectionPopup(bpy.types.Operator):
 
                 value = object.class_definition.get_properties()[search_var_name]['value']
                 object.select_set(
-                    object.class_name == search_class
-                    and SelectionPopup.compare(value, search_property.value, context.scene.comparison_type)
+                    object.select_get() or
+                    object.class_name == search_class and
+                    SelectionPopup.compare(value, search_property.value, context.scene.comparison_type)
                 )
         # Search for matching classes
         else:
             for object in context.scene.objects:
-                object.select_set(object.class_name == search_class)
+                object.select_set(object.select_get() or object.class_name == search_class)
 
-        if len(context.selected_objects) > 0 and context.active_object not in context.selected_objects:
-            context.view_layer.objects.active = context.selected_objects[0]
+        # if len(context.selected_objects) > 0 and context.active_object not in context.selected_objects:
+        #     context.view_layer.objects.active = context.selected_objects[0]
 
         if len(context.selected_objects) == 0:
             self.report({'INFO'}, 'No objects found.')
