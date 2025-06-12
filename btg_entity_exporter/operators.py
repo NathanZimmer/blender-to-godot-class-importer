@@ -1,11 +1,12 @@
 """
-`bpy.types.Operator` inheriting classes
+`bpy.types.Operator` classes for reading and writing the entity JSONs
 """
 
 import bpy
 import json
 import traceback
 from pathlib import Path
+
 # import shutil
 from . import utilities
 
@@ -25,10 +26,11 @@ class EntityTemplateReader(bpy.types.Operator):
         try:
             self.read_template_json()
         except Exception:
-            self.report({'ERROR'}, f'Failed to load JSON file with exception:\n{traceback.format_exc()}')
+            self.report(
+                {'ERROR'}, f'Failed to load JSON file with exception:\n{traceback.format_exc()}'
+            )
             return {'CANCELLED'}
 
-        # Clear old defs and refresh updated defs
         utilities.refresh_class_definitions()
 
         self.report({'DEBUG'}, f'{context.scene.entity_template=}')
@@ -96,7 +98,9 @@ class EntityImportWriter(bpy.types.Operator):
             self.report({'INFO'}, 'Wrote JSON!')
             return {'FINISHED'}
         except Exception:
-            self.report({'ERROR'}, f'Failed to write JSON file with exception:\n{traceback.format_exc()}')
+            self.report(
+                {'ERROR'}, f'Failed to write JSON file with exception:\n{traceback.format_exc()}'
+            )
             return {'CANCELLED'}
 
 

@@ -21,7 +21,7 @@
             },
             "enum_example": {
                 "type": "enum",
-                "value": 0
+                "value": 1
             }
         }
     },

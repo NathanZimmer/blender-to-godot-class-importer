@@ -1,9 +1,9 @@
 """
-Utilitiy functions for operating on `bpy.context` `scene` and `object` variables defined in `__init__.register()`
+Utilitiy functions for operating on `bpy.context` `scene` and `object`
+variables defined in `__init__.register()`
 """
 
 import bpy
-import json
 from . import entity
 
 
@@ -140,7 +140,15 @@ def get_class_list(_, context) -> list[tuple[str, str, str]]:
 
 def to_json_type(prop: entity.EntityProperty) -> int | str | bool | float:
     """
-    TODO
+    Convert `EntityProperty` to JSON supported type
+
+    Parameters
+    ----------
+    `prop`: Property to convert
+
+    Returns
+    -------
+    Value converted to a type that is supported by JSON file format
     """
     json_types = (int, str, bool, float)  # Values that can be translated to JSON format
 

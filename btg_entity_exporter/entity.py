@@ -1,6 +1,6 @@
 """
-BTG Entity classes. These classes contain the Godot Node/variables definitions
-and functions for manipulating that data
+Classes for Godot Node/variables definitions and functions for manipulating that data.
+These classes are wrappers around bpy property objects to allow for dynamic allocation.
 """
 
 import bpy
@@ -19,16 +19,6 @@ class PropTypes(enum.Enum):
     FLOAT_VECTOR_2 = 'm_float_vector_2'
     ENUM = 'm_enum'
 
-
-# class GodotPropTypes(enum.Enum):
-#     BOOL = 'bool'
-#     INT = 'int'
-#     FLOAT = 'float'
-#     VECTOR_3 = 'Vector3'
-#     VECTOR_3 = 'Vector3'
-#     VECTOR_2 = 'Vector2'
-#     VECTOR_2_I = 'Vector2i'
-#     ENUM = 'enum'
 
 class EntityTemplate(bpy.types.PropertyGroup):
     """
@@ -75,14 +65,6 @@ class EntityProperty(bpy.types.PropertyGroup):
     for easier dynamic allocation and manipulation
     """
 
-    def get_enum_items(self, _=None) -> list[tuple[str, str, str]]:
-        """
-        Return `self.m_enum_items` formatted for use with a Blender
-        ENUM property
-        """
-        items = json.loads(self.m_enum_items)
-        return [(str(val), str(val), str(val)) for val in items.keys()]
-
     def init(
         self,
         name: str,
@@ -110,9 +92,10 @@ class EntityProperty(bpy.types.PropertyGroup):
 
         `items`: Optional, the enum items if `type == 'enum'`
         """
+        # self.m_name = name
         self.name = name
-        self.godot_type = type
-        self.description = description
+        self.m_description = description
+        self.m_godot_type = type
 
         match type:
             case 'bool':
@@ -144,11 +127,44 @@ class EntityProperty(bpy.types.PropertyGroup):
                 self.m_string = value
                 self.m_type = PropTypes.STRING.value
 
+    def get_enum_items(self, _=None) -> list[tuple[str, str, str]] | None:
+        """
+        Get the enum items of this property
+
+        Returns
+        -------
+        The enum items of this property formatted for use with `bpy.props.EnumProperty`
+        or `None` if this property has no enum items
+        """
+
+        items = json.loads(self.m_enum_items)
+        if items is None:
+            return
+
+        return [(str(val), str(val), str(val)) for val in items.keys()]
+
     def get_enum_value(self) -> int | None:
         """
-        TODO
+        Get the `int` value of the selected enum
+
+        Returns
+        -------
+        The `int` value of the selected enum index or `None` if this property is not an enum
         """
         return json.loads(self.m_enum_items).get(self.value, None)
+
+    # FIXME: Why does using @property break name but not godot_type??
+    # @property
+    # def name(self) -> str:
+    #     return self.m_name
+
+    @property
+    def description(self) -> str:
+        return self.m_description
+
+    @property
+    def godot_type(self) -> str:
+        return self.m_godot_type
 
     @property
     def string_ref(self) -> str:
@@ -161,22 +177,21 @@ class EntityProperty(bpy.types.PropertyGroup):
     @property
     def value(self) -> any:
         """
-        Get variable described by `self.string_ref`
+        The value of this property
         """
         return getattr(self, self.m_type)
 
     @value.setter
     def value(self, val: any) -> None:
         """
-        Set variable described by `self.string_ref`
+        The value of this property
         """
         setattr(self, self.m_type, val)
 
-    # Variable name and prop type
+    m_name: bpy.props.StringProperty()  # type: ignore
     name: bpy.props.StringProperty()  # type: ignore
-    # TODO: Find a way to override the tooltip to show each property's desc
-    description: bpy.props.StringProperty()  # type: ignore
-    godot_type: bpy.props.StringProperty()  # type: ignore
+    m_description: bpy.props.StringProperty()  # type: ignore
+    m_godot_type: bpy.props.StringProperty()  # type: ignore
 
     m_type: bpy.props.EnumProperty(
         items=[
@@ -262,7 +277,7 @@ class EntityDefinition(bpy.types.PropertyGroup):
     ) -> None:
         """
         Add a variable to this object's variable list.
-        Variables are accessd by index.
+        Variables are accessed by index.
 
         Parameters
         ----------

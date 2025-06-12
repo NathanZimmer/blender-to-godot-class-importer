@@ -1,5 +1,5 @@
 """
-The `bpy.types.Panel` inheriting classes that define the GUI of the addon
+Classes that define the GUI of the addon
 """
 
 import bpy
@@ -56,7 +56,8 @@ class BTGPanel(bpy.types.Panel):
         if class_name in ('None', ''):
             return
 
-        # Prevents editing fields of an object with a different class
+        # Prevents alt+enter multi-select editing of field with the same name
+        # in different classes
         for object in context.selected_objects:
             if object.class_name != class_name:
                 entity_box.label(text='...')
@@ -98,9 +99,11 @@ class SelectionPopup(bpy.types.Operator):
 
                 value = object.class_definition.get_properties()[search_var_name]['value']
                 object.select_set(
-                    object.select_get() or
-                    object.class_name == search_class and
-                    SelectionPopup.compare(value, search_property.value, context.scene.comparison_type)
+                    object.select_get()
+                    or object.class_name == search_class
+                    and SelectionPopup.compare(
+                        value, search_property.value, context.scene.comparison_type
+                    )
                 )
         # Search for matching classes
         else:
@@ -122,7 +125,6 @@ class SelectionPopup(bpy.types.Operator):
         """
         Check if vars `x` and `y` are within `delta` distance
         """
-        # If string, do regular equality
         if isinstance(x, str) or isinstance(y, str):
             return x == y
 
@@ -186,7 +188,7 @@ class SelectionPopup(bpy.types.Operator):
             row.prop(context.scene, 'search_var_name', text='')
 
             search_property = context.scene.search_property
-            # Types that we want to show the expanded set of comparison options for
+            # Types that we want to show the expanded set of comparisons options for
             expanded_compare_types = (
                 entity.PropTypes.INT.value,
                 entity.PropTypes.FLOAT.value,
@@ -194,7 +196,9 @@ class SelectionPopup(bpy.types.Operator):
             if search_property.string_ref in expanded_compare_types:
                 row.prop(context.scene, 'comparison_type', text='')
             else:
-                row.label(text='==', )
+                row.label(
+                    text='==',
+                )
 
             row.prop(search_property, search_property.string_ref, text='')
 
