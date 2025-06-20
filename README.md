@@ -172,8 +172,11 @@ TODO
   * link to Godot's import tag page
   * Something about extending mesh-instance or using empties to prevent meshes from disappearing
     * define your own mesh variable!
-  * Something about using the Blender asset library to achieve something similar to Godot's scenes
+  * linking can be very useful (file>link and then override twice)
+    * But be careful because you will need to re-save and export every blend you link to if you update the source one
 * revise gdscript code
 * finish both demo scenes
 * Note downsides of using this program
   * Biggest being there is no automatic way to convert to a Godot primitive shape
+  * alt+d duplication doesn't work right now
+  * this addon does not work well with the asset lib
