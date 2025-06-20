@@ -5,7 +5,7 @@
         "variables": {
             "string_example": {
                 "type": "String",
-                "value": "string example"
+                "value": "test 9"
             },
             "int_example": {
                 "type": "int",
@@ -66,6 +66,32 @@
             "set_primitive()": {
                 "type": "enum",
                 "value": 0
+            }
+        }
+    },
+    "BTGExampleClass_001": {
+        "class": "BTGExampleClass0",
+        "uid": "uid://cslerxu3gbk31",
+        "variables": {
+            "string_example": {
+                "type": "String",
+                "value": "(:"
+            },
+            "int_example": {
+                "type": "int",
+                "value": 1
+            },
+            "vector_example": {
+                "type": "Vector3",
+                "value": "(1.0, 2.0, 3.0)"
+            },
+            "vector_2_example": {
+                "type": "Vector2i",
+                "value": "(2, 1)"
+            },
+            "enum_example": {
+                "type": "enum",
+                "value": 2
             }
         }
     }
