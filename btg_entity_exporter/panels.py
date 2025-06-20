@@ -110,8 +110,8 @@ class SelectionPopup(bpy.types.Operator):
             for object in context.scene.objects:
                 object.select_set(object.select_get() or object.class_name == search_class)
 
-        # if len(context.selected_objects) > 0 and context.active_object not in context.selected_objects:
-        #     context.view_layer.objects.active = context.selected_objects[0]
+        if context.active_object not in context.selected_objects:
+            context.view_layer.objects.active = context.selected_objects[0]
 
         if len(context.selected_objects) == 0:
             self.report({'INFO'}, 'No objects found.')
