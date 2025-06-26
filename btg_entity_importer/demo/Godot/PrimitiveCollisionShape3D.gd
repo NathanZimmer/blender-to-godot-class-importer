@@ -1,9 +1,10 @@
 class_name PrimitiveCollisionShape3D extends CollisionShape3D
 
-enum Primitives {BOX, SPHERE}
+enum Primitives { BOX, SPHERE }
 
 # BTG will populate this automatically
 var mesh: Mesh
+
 
 ## TODO
 func set_primitive(type: Primitives) -> void:

@@ -100,7 +100,6 @@ static func _import_entities_from_def(
 
         var variables = entity_def[node.name]["variables"]
         for variable in variables:
-
             var is_func: bool = variable.ends_with("()")
 
             if is_func:
