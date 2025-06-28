@@ -48,7 +48,7 @@ func _post_process(scene):
 ## the tree up to `node`.
 static func _import_entities_from_def(
     entity_def: Dictionary,
-    node: Node3D,
+    node: Node,
 ) -> int:
     var num_failures = 0
     # Need to keep track of these for setting owner later
@@ -170,7 +170,7 @@ static func _import_entities_from_def(
 
 
 ## Set the owner of `node` and all nodes down its tree to `owner`
-static func _recursive_set_owner(node: Node3D, owner: Node3D):
+static func _recursive_set_owner(node: Node, owner: Node):
     node.set_owner(owner)
     var children = node.get_children()
     if children.is_empty():
