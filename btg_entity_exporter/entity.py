@@ -1,6 +1,6 @@
 """
-BTG Entity classes. These classes contain the Godot Node/variables definitions
-and functions for manipulating that data
+Classes for Godot Node/variables definitions and functions for manipulating that data.
+These classes are wrappers around bpy property objects to allow for dynamic allocation.
 """
 
 import bpy
@@ -9,13 +9,15 @@ import enum
 
 
 class PropTypes(enum.Enum):
-    INT = 'mInt'
-    FLOAT = 'mFloat'
-    STRING = 'mString'
-    BOOL = 'mBool'
-    INT_VECTOR = 'mIntVector'
-    FLOAT_VECTOR = 'mFloatVector'
-    ENUM = 'mEnum'
+    INT = 'm_int'
+    FLOAT = 'm_float'
+    STRING = 'm_string'
+    BOOL = 'm_bool'
+    INT_VECTOR = 'm_int_vector'
+    FLOAT_VECTOR = 'm_float_vector'
+    INT_VECTOR_2 = 'm_int_vector_2'
+    FLOAT_VECTOR_2 = 'm_float_vector_2'
+    ENUM = 'm_enum'
 
 
 class EntityTemplate(bpy.types.PropertyGroup):
@@ -23,38 +25,38 @@ class EntityTemplate(bpy.types.PropertyGroup):
     Wrapper for entity template JSON file
     """
 
-    template = {}
-    template_str: bpy.props.StringProperty(default='{"None": ""}')  # type: ignore
+    m_template = {}
+    m_template_str: bpy.props.StringProperty(default='{"None": ""}')  # type: ignore
 
     def init_dict(self) -> None:
         """
         Repopulate template dict from string after Blender restart
         """
-        self.template.clear()
-        self.template |= json.loads(self.template_str)
+        self.m_template.clear()
+        self.m_template |= json.loads(self.m_template_str)
 
     def reset(self, template: dict) -> None:
         """
         Reset this object with a new template JSON
         """
-        self.template.clear()
-        self.template |= template
+        self.m_template.clear()
+        self.m_template |= template
 
-        # NOTE: Blender cannot store dict type objects, so this is a workaround
+        # Blender cannot store dict type objects, so this is a workaround
         # to preserve the dict between blender sessions.
-        self.template_str = json.dumps(template)
+        self.m_template_str = json.dumps(template)
 
     def keys(self) -> None:
-        return self.template.keys()
+        return self.m_template.keys()
 
     def items(self) -> None:
-        return self.template.items()
+        return self.m_template.items()
 
     def __getitem__(self, key) -> any:
-        return self.template[key]
+        return self.m_template[key]
 
     def __contains__(self, key):
-        return key in self.template
+        return key in self.m_template
 
 
 class EntityProperty(bpy.types.PropertyGroup):
@@ -63,24 +65,17 @@ class EntityProperty(bpy.types.PropertyGroup):
     for easier dynamic allocation and manipulation
     """
 
-    def get_enum_items(self, _=None) -> list[tuple[str, str, str]]:
-        """
-        Return `self.mEnumItems` formatted for use with a Blender
-        ENUM property
-        """
-        items = json.loads(self.mEnumItems)
-        return [(str(val), str(val), str(val)) for val in items]
-
     def init(
         self,
         name: str,
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = None,
+        items: dict[str, int] = None,
     ) -> None:
         """
         Initialize object
+
         NOTE: Needs to be called manually because `__init__` is not called by the
         Blender API
 
@@ -93,37 +88,83 @@ class EntityProperty(bpy.types.PropertyGroup):
         `type`: Godot type of the corresponding variable
 
         `description`: Optional, the description of this variable.
-        NOTE: currently unused
+        Currently unused
 
-        `items`: Optional, fill this param if `type == 'enum'`
+        `items`: Optional, the enum items if `type == 'enum'`
         """
+        # self.m_name = name
         self.name = name
-        self.godot_type = type
-        self.description = description
+        self.m_description = description
+        self.m_godot_type = type
 
         match type:
             case 'bool':
-                self.mBool = value
-                self.mType = PropTypes.BOOL.value
+                self.m_bool = value
+                self.m_type = PropTypes.BOOL.value
             case 'int':
-                self.mInt = value
-                self.mType = PropTypes.INT.value
+                self.m_int = value
+                self.m_type = PropTypes.INT.value
             case 'float':
-                self.mFloat = value
-                self.mType = PropTypes.FLOAT.value
+                self.m_float = value
+                self.m_type = PropTypes.FLOAT.value
             case 'Vector3':
-                self.mFloatVector = value
-                self.mType = PropTypes.FLOAT_VECTOR.value
+                self.m_float_vector = value
+                self.m_type = PropTypes.FLOAT_VECTOR.value
             case 'Vector3i':
-                self.mIntVector = value
-                self.mType = PropTypes.INT_VECTOR.value
+                self.m_int_vector = value
+                self.m_type = PropTypes.INT_VECTOR.value
+            case 'Vector2':
+                self.m_float_vector_2 = value
+                self.m_type = PropTypes.FLOAT_VECTOR_2.value
+            case 'Vector2i':
+                self.m_int_vector_2 = value
+                self.m_type = PropTypes.INT_VECTOR_2.value
             case 'enum':
-                self.mEnumItems = json.dumps(items)
-                self.mEnum = value
-                self.mType = PropTypes.ENUM.value
+                self.m_enum_items = json.dumps(items)
+                self.m_enum = value
+                self.m_type = PropTypes.ENUM.value
             case _:
-                self.mString = value
-                self.mType = PropTypes.STRING.value
+                self.m_string = value
+                self.m_type = PropTypes.STRING.value
+
+    def get_enum_items(self, _=None) -> list[tuple[str, str, str]] | None:
+        """
+        Get the enum items of this property
+
+        Returns
+        -------
+        The enum items of this property formatted for use with `bpy.props.EnumProperty`
+        or `None` if this property has no enum items
+        """
+
+        items = json.loads(self.m_enum_items)
+        if items is None:
+            return
+
+        return [(str(val), str(val), str(val)) for val in items.keys()]
+
+    def get_enum_value(self) -> int | None:
+        """
+        Get the `int` value of the selected enum
+
+        Returns
+        -------
+        The `int` value of the selected enum index or `None` if this property is not an enum
+        """
+        return json.loads(self.m_enum_items).get(self.value, None)
+
+    # FIXME: Why does using @property break name but not godot_type??
+    # @property
+    # def name(self) -> str:
+    #     return self.m_name
+
+    @property
+    def description(self) -> str:
+        return self.m_description
+
+    @property
+    def godot_type(self) -> str:
+        return self.m_godot_type
 
     @property
     def string_ref(self) -> str:
@@ -131,72 +172,85 @@ class EntityProperty(bpy.types.PropertyGroup):
         Return string name of this property's value for `layout.prop`
         GUI displaying
         """
-        return self.mType
+        return self.m_type
 
     @property
     def value(self) -> any:
         """
-        Get variable described by `self.string_ref`
+        The value of this property
         """
-        return getattr(self, self.mType)
+        return getattr(self, self.m_type)
 
     @value.setter
     def value(self, val: any) -> None:
         """
-        Set variable described by `self.string_ref`
+        The value of this property
         """
-        setattr(self, self.mType, val)
+        setattr(self, self.m_type, val)
 
-    # Variable name and prop type
+    m_name: bpy.props.StringProperty()  # type: ignore
     name: bpy.props.StringProperty()  # type: ignore
-    # TODO: Find a way to override the tooltip to show each property's desc
-    description: bpy.props.StringProperty()  # type: ignore
-    godot_type: bpy.props.StringProperty()  # type: ignore
+    m_description: bpy.props.StringProperty()  # type: ignore
+    m_godot_type: bpy.props.StringProperty()  # type: ignore
 
-    mType: bpy.props.EnumProperty(
+    m_type: bpy.props.EnumProperty(
         items=[
-            ('mInt', 'mInt', 'mInt'),
-            ('mFloat', 'mFloat', 'mFloat'),
-            ('mString', 'mString', 'mString'),
-            ('mBool', 'mBool', 'mBool'),
-            ('mIntVector', 'mIntVector', 'mIntVector'),
-            ('mFloatVector', 'mFloatVector', 'mFloatVector'),
-            ('mEnum', 'mEnum', 'mEnum'),
+            ('m_int', 'm_int', 'm_int'),
+            ('m_float', 'm_float', 'm_float'),
+            ('m_string', 'm_string', 'm_string'),
+            ('m_bool', 'm_bool', 'm_bool'),
+            ('m_int_vector', 'm_int_vector', 'm_int_vector'),
+            ('m_float_vector', 'm_float_vector', 'm_float_vector'),
+            ('m_int_vector_2', 'm_int_vector_2', 'm_int_vector_2'),
+            ('m_float_vector_2', 'm_float_vector_2', 'm_float_vector_2'),
+            ('m_enum', 'm_enum', 'm_enum'),
         ],
     )  # type: ignore
 
     # Supported value types
     # NOTE: We need to instantiate a var of each type because of API quirks
-    mInt: bpy.props.IntProperty(
+    # NOTE: Blender does not allow bpy.prop variables to be named with "_", so we
+    # are using "m_" to denote private instead
+    m_int: bpy.props.IntProperty(
         name='int',
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
-    mFloat: bpy.props.FloatProperty(
+    m_float: bpy.props.FloatProperty(
         name='float',
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
-    mString: bpy.props.StringProperty(
+    m_string: bpy.props.StringProperty(
         name='string',
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
-    mBool: bpy.props.BoolProperty(
+    m_bool: bpy.props.BoolProperty(
         name='bool',
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
-    mIntVector: bpy.props.IntVectorProperty(
+    m_int_vector: bpy.props.IntVectorProperty(
         name='Vector3i',
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
-    mFloatVector: bpy.props.FloatVectorProperty(
+    m_float_vector: bpy.props.FloatVectorProperty(
         name='Vector3',
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
-    mEnum: bpy.props.EnumProperty(
+    m_int_vector_2: bpy.props.IntVectorProperty(
+        name='Vector2i',
+        size=2,
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    m_float_vector_2: bpy.props.FloatVectorProperty(
+        name='Vector2',
+        size=2,
+        override={'LIBRARY_OVERRIDABLE'},
+    )  # type: ignore
+    m_enum: bpy.props.EnumProperty(
         name='enum',
         items=get_enum_items,
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
-    mEnumItems: bpy.props.StringProperty(
+    m_enum_items: bpy.props.StringProperty(
         default='{"None": ""}',
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
@@ -204,11 +258,11 @@ class EntityProperty(bpy.types.PropertyGroup):
 
 class EntityDefinition(bpy.types.PropertyGroup):
     """
-    Represents a Godot class/variables from the entity template JSON
+    Represents a Godot class and its variables from the entity template JSON
     """
 
     # List of Godot variables
-    properties: bpy.props.CollectionProperty(
+    m_properties: bpy.props.CollectionProperty(
         type=EntityProperty,
         override={'LIBRARY_OVERRIDABLE'},
     )  # type: ignore
@@ -219,11 +273,11 @@ class EntityDefinition(bpy.types.PropertyGroup):
         value: any,
         type: str,
         description: str = '',
-        items: list[str] = None,
+        items: dict[str, int] = None,
     ) -> None:
         """
         Add a variable to this object's variable list.
-        Variables are accessd by index.
+        Variables are accessed by index.
 
         Parameters
         ----------
@@ -233,19 +287,18 @@ class EntityDefinition(bpy.types.PropertyGroup):
 
         `type`: Godot type of the corresponding variable
 
-        `description`: Optional, the description of this variable.
-        NOTE: currently unused
+        `description`: Optional, the description of this variable. Currently unused
 
         `items`: Optional, fill this param if `type == 'enum'`
         """
-        prop = self.properties.add()
+        prop = self.m_properties.add()
         prop.init(name, value, type, description, items)
 
     def clear(self) -> None:
         """
         Deletes this entity's variables
         """
-        self.properties.clear()
+        self.m_properties.clear()
 
     def get_properties(self) -> dict:
         """
@@ -272,14 +325,14 @@ class EntityDefinition(bpy.types.PropertyGroup):
                 'description': prop.description,
                 'items': prop.get_enum_items(),
             }
-            for prop in self.properties
+            for prop in self.m_properties
         }
 
     def __iter__(self):
-        return self.properties.__iter__()
+        return self.m_properties.__iter__()
 
     def __getitem__(self, key):
-        return self.properties[key]
+        return self.m_properties[key]
 
 
 def register():

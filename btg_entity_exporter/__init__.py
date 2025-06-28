@@ -14,7 +14,7 @@ if 'bpy' in locals():
 bl_info = {
     'name': 'Blender To Godot Pipeline',
     'author': 'Nathan Zimmer',
-    'version': (0, 1, 0),
+    'version': (1, 0, 0),
     'blender': (4, 2, 0),
     'category': 'Object',
 }
@@ -26,6 +26,7 @@ def register():
     operators.register()
     panels.register()
 
+    # load/save functions
     if utilities.load_template not in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.append(utilities.load_template)
 
@@ -33,28 +34,28 @@ def register():
         bpy.app.handlers.save_post.append(utilities.export_on_save)
 
     # File IO
-    bpy.types.Scene.entity_def_path = bpy.props.StringProperty(
-        name='Godot entity definition path',
-        description='The path of your Godot entity definition JSON',
+    bpy.types.Scene.entity_template_path = bpy.props.StringProperty(
+        name='Entity template path',
+        description='The path of your Godot entity template JSON',
         subtype='FILE_PATH',
     )
     bpy.types.Scene.btg_write_path = bpy.props.StringProperty(
-        name='BTG import write-path',
+        name='Entity definition write-path',
         description=(
-            'The path to write your BTG import JSON. You have to write '
-            'this JSON in order to use the import script in Godot.'
+            'The path to write your entity definition import JSON. You have to write '
+            'out this JSON in order to use the import script in Godot.'
         ),
         subtype='FILE_PATH',
     )
     bpy.types.Scene.export_on_save = bpy.props.BoolProperty(
         name='Export on save',
-        description=('Write BTG entity definition JSON whenever the file is saved.'),
+        description=('Write out entity definition JSON whenever the file is saved.'),
         default=False,
     )
 
     # Entity definition
     bpy.types.Object.class_name = bpy.props.EnumProperty(
-        items=utilities.get_entity_list,
+        items=utilities.get_class_list,
         update=utilities.reset_class_definition,
         description='The Godot class of this object',
         default=0,
@@ -76,7 +77,7 @@ def register():
     bpy.types.Scene.search_class_name = bpy.props.EnumProperty(
         name='Godot Entities',
         description='The Godot class to search for',
-        items=utilities.get_entity_list,
+        items=utilities.get_class_list,
         update=utilities.set_search_property,
         default=0,
     )
@@ -114,6 +115,7 @@ def unregister():
     operators.unregister()
     panels.unregister()
 
+    # load/save functions
     if utilities.load_template in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(utilities.load_template)
 
@@ -121,7 +123,7 @@ def unregister():
         bpy.app.handlers.save_post.remove(utilities.export_on_save)
 
     # File IO
-    del bpy.types.Scene.entity_def_path
+    del bpy.types.Scene.entity_template_path
     del bpy.types.Scene.btg_write_path
     del bpy.types.Scene.export_on_save
 

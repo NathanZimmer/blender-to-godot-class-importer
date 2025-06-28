@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://oa6inp66pe1u"]
 
-[ext_resource type="PackedScene" uid="uid://2cp8dpors73v" path="res://addons/blender_to_godot_pipeline/demo/demo_scene.blend" id="2_cq2yj"]
+[ext_resource type="PackedScene" uid="uid://c28h24v0vtnb6" path="res://addons/blender_to_godot_pipeline/demo/Bleder/demo_scene.blend" id="2_cq2yj"]
 
 [sub_resource type="Environment" id="Environment_ojrjl"]
 background_color = Color(0.509286, 0.509286, 0.509286, 1)

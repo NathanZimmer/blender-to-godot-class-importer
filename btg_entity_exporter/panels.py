@@ -1,5 +1,5 @@
 """
-The `bpy.types.Panel` inheriting classes that define the GUI of the addon
+Classes that define the GUI of the addon
 """
 
 import bpy
@@ -29,8 +29,8 @@ class BTGPanel(bpy.types.Panel):
         # Import and export UI
         layout.label(text='Import and Export')
         import_export_box = layout.box()
-        import_export_box.label(text=scene_props['entity_def_path'].name)
-        import_export_box.prop(context.scene, 'entity_def_path', text='')
+        import_export_box.label(text=scene_props['entity_template_path'].name)
+        import_export_box.prop(context.scene, 'entity_template_path', text='')
         import_export_box.operator('json.read')
         import_export_box.label(text=scene_props['btg_write_path'].name)
         import_export_box.prop(context.scene, 'btg_write_path', text='')
@@ -56,7 +56,8 @@ class BTGPanel(bpy.types.Panel):
         if class_name in ('None', ''):
             return
 
-        # Prevents editing fields of an object with a different class
+        # Prevents alt+enter multi-select editing of field with the same name
+        # in different classes
         for object in context.selected_objects:
             if object.class_name != class_name:
                 entity_box.label(text='...')
@@ -68,14 +69,14 @@ class BTGPanel(bpy.types.Panel):
             entity_box.prop(property, property.string_ref, text='')
 
 
-# NOTE: This is an operator, but it creates a GUI element, so it fits better here
+# This is an operator, but it creates a GUI element, so it fits better here
 class SelectionPopup(bpy.types.Operator):
     """
     Search for objects in the scene based on class name or class variable value
     """
 
     bl_idname = 'select_popup.open'
-    bl_label = 'Find objects by...'
+    bl_label = 'Select objects by...'
 
     def execute(self, context):
         """
@@ -98,15 +99,18 @@ class SelectionPopup(bpy.types.Operator):
 
                 value = object.class_definition.get_properties()[search_var_name]['value']
                 object.select_set(
-                    object.class_name == search_class
-                    and SelectionPopup.compare(value, search_property.value, context.scene.comparison_type)
+                    object.select_get()
+                    or object.class_name == search_class
+                    and SelectionPopup.compare(
+                        value, search_property.value, context.scene.comparison_type
+                    )
                 )
         # Search for matching classes
         else:
             for object in context.scene.objects:
-                object.select_set(object.class_name == search_class)
+                object.select_set(object.select_get() or object.class_name == search_class)
 
-        if len(context.selected_objects) > 0 and context.active_object not in context.selected_objects:
+        if context.active_object not in context.selected_objects:
             context.view_layer.objects.active = context.selected_objects[0]
 
         if len(context.selected_objects) == 0:
@@ -121,7 +125,6 @@ class SelectionPopup(bpy.types.Operator):
         """
         Check if vars `x` and `y` are within `delta` distance
         """
-        # If string, do regular equality
         if isinstance(x, str) or isinstance(y, str):
             return x == y
 
@@ -170,28 +173,34 @@ class SelectionPopup(bpy.types.Operator):
         layout.label(text='Search by...')
         layout.prop(context.scene, 'search_type', text='')
 
-        layout.label(text='Parameters')
-        box = layout.box()
-        box.prop(context.scene, 'search_class_name', text='')
+        layout.label(text='Class')
+        layout.box().prop(context.scene, 'search_class_name', text='')
 
         if context.scene.search_class_name == 'None':
             return
 
         if context.scene.search_type == 'var_val':
-            box.prop(context.scene, 'search_var_name', text='')
+            layout.label(text='Parameters')
+            var_box = layout.box()
+
+            row = var_box.row()
+            row.alignment = 'CENTER'
+            row.prop(context.scene, 'search_var_name', text='')
 
             search_property = context.scene.search_property
-            # Types that we want to show the expanded set of comparison options for
+            # Types that we want to show the expanded set of comparisons options for
             expanded_compare_types = (
                 entity.PropTypes.INT.value,
                 entity.PropTypes.FLOAT.value,
-                entity.PropTypes.FLOAT_VECTOR.value,
-                entity.PropTypes.INT_VECTOR.value,
             )
             if search_property.string_ref in expanded_compare_types:
-                box.prop(context.scene, 'comparison_type', text='')
+                row.prop(context.scene, 'comparison_type', text='')
+            else:
+                row.label(
+                    text='==',
+                )
 
-            box.prop(search_property, search_property.string_ref, text='')
+            row.prop(search_property, search_property.string_ref, text='')
 
 
 def register():

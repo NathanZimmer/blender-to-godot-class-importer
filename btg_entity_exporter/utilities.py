@@ -1,16 +1,18 @@
 """
-Utilitiy functions for operating on `bpy.context` `scene` and `object` variables defined in `__init__.register()`
+Utilitiy functions for operating on `bpy.context` `scene` and `object`
+variables defined in `__init__.register()`
 """
 
 import bpy
+from . import entity
 
 
 def refresh_class_definitions() -> None:
     """
     Compare `object.class_definition` values to `scene.entity_template`.
     Check if:
-    * class was removed
-    * class order was changed
+    * class was removed from entity template
+    * class order was changed in entity template
     * class variables were reordered/changed
     """
     scene = bpy.context.scene
@@ -55,27 +57,14 @@ def reset_class_definition(self, context) -> None:
 
     if self.class_name == 'None':
         return
-    # elif self.data:
-    #     # If this object has a mesh, display warning
-    #     draw_func = lambda self, _: self.layout.label(
-    #         text= (
-    #                 "Object mesh data will be deleted on import if this Object's class "
-    #                 'does not inherit from MeshInstance3D'
-    #             )
-    #     )
-    #     bpy.context.window_manager.popup_menu(
-    #         draw_func=draw_func, title="Warning", icon='ERROR',
-    #     )
 
     class_def = context.scene.entity_template[self.class_name]
 
     for var_name, var_def in class_def['variables'].items():
-        # var_type, var_default, var_desc, var_items = var_def
         var_type = var_def['type']
         var_default = var_def['default']
-        var_desc = var_def['description']
         var_desc = var_def.get('description', '')
-        var_items = var_def.get('options', [])
+        var_items = var_def.get('options', {})
 
         self.class_definition.add(
             name=var_name,
@@ -101,7 +90,7 @@ def set_search_property(self, _) -> None:
     var_type = var_def['type']
     var_val = var_def['default']
     var_desc = var_def.get('description', '')
-    var_items = var_def.get('options', [])
+    var_items = var_def.get('options', {})
 
     self.comparison_type = '=='
 
@@ -126,7 +115,7 @@ def get_variable_search_list(self, _) -> list[tuple[str, str, str]]:
     return [(key, key, key) for key in search_class['variables'].keys()]
 
 
-def get_entity_list(_, context) -> list[tuple[str, str, str]]:
+def get_class_list(_, context) -> list[tuple[str, str, str]]:
     """
     Get the keys for `context.object.class_name` in blender ENUM format
 
@@ -135,6 +124,29 @@ def get_entity_list(_, context) -> list[tuple[str, str, str]]:
     `context`: Context of the caller of this function
     """
     return [(key, key, key) for key in context.scene.entity_template.keys()]
+
+
+def to_json_type(prop: entity.EntityProperty) -> int | str | bool | float:
+    """
+    Convert `EntityProperty` to JSON supported type
+
+    Parameters
+    ----------
+    `prop`: Property to convert
+
+    Returns
+    -------
+    Value converted to a type that is supported by JSON file format
+    """
+    json_types = {int, str, bool, float}  # Values that can be translated to JSON format
+
+    if prop.string_ref == 'm_enum':
+        return prop.get_enum_value()
+
+    if type(prop.value) in json_types:
+        return prop.value
+
+    return str(prop.value[0:])
 
 
 @bpy.app.handlers.persistent

@@ -1,0 +1,67 @@
+{
+    "BTGExampleClass0": {
+        "uid": "uid://cslerxu3gbk31",
+        "variables": {
+            "string_example": {
+                "type": "String",
+                "default": "string example"
+            },
+            "int_example": {
+                "type": "int",
+                "default": 1
+            },
+            "vector_example": {
+                "type": "Vector3",
+                "default": [1, 2, 3]
+            },
+            "vector_2_example": {
+                "type": "Vector2i",
+                "default": [2, 1]
+            },
+            "enum_example": {
+                "type": "enum",
+                "default": "OPTION_1",
+                "options": {"OPTION_1": 0, "OPTION_2": 1, "OPTION_3": 2}
+            }
+        }
+    },
+    "BTGExampleClass1": {
+        "uid": "uid://cdw76g81jq3sk",
+        "variables": {
+            "float_example": {
+                "type": "float",
+                "default": 0.5
+            },
+            "custom_float()": {
+                "type": "float",
+                "default": 0.5
+            }
+        }
+    },
+    "BTGExampleScene": {
+        "uid": "uid://fjpvkfhwnykm",
+        "variables": {}
+    },
+    "BTGMeshExample": {
+        "uid": "uid://bsowj0m5hf24t",
+        "variables": {}
+    },
+    "Area3D": {
+        "variables": {
+            "collision_layer": {
+                "type": "int",
+                "default": 1
+            }
+        }
+    },
+    "PrimitiveCollisionShape3D": {
+        "uid": "uid://bk8pujn7tv45v",
+        "variables": {
+            "set_primitive()": {
+                "type": "enum",
+                "default": "BOX",
+                "options": {"BOX": 0, "SPHERE": 1}
+            }
+        }
+    }
+}

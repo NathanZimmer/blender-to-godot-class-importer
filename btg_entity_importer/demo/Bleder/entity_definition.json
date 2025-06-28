@@ -1,0 +1,98 @@
+{
+    "BTGExample0": {
+        "class": "BTGExampleClass0",
+        "uid": "uid://cslerxu3gbk31",
+        "variables": {
+            "string_example": {
+                "type": "String",
+                "value": "test 9"
+            },
+            "int_example": {
+                "type": "int",
+                "value": 1
+            },
+            "vector_example": {
+                "type": "Vector3",
+                "value": "(1.0, 2.0, 3.0)"
+            },
+            "vector_2_example": {
+                "type": "Vector2i",
+                "value": "(2, 1)"
+            },
+            "enum_example": {
+                "type": "enum",
+                "value": 1
+            }
+        }
+    },
+    "BTGExample1": {
+        "class": "BTGExampleClass1",
+        "uid": "uid://cdw76g81jq3sk",
+        "variables": {
+            "float_example": {
+                "type": "float",
+                "value": 0.5
+            },
+            "custom_float()": {
+                "type": "float",
+                "value": 0.5
+            }
+        }
+    },
+    "BTGExample2": {
+        "class": "BTGExampleScene",
+        "uid": "uid://fjpvkfhwnykm",
+        "variables": {}
+    },
+    "BTGMeshExample": {
+        "class": "BTGMeshExample",
+        "uid": "uid://bsowj0m5hf24t",
+        "variables": {}
+    },
+    "Area3D": {
+        "class": "Area3D",
+        "uid": "",
+        "variables": {
+            "collision_layer": {
+                "type": "int",
+                "value": 1
+            }
+        }
+    },
+    "PrimitiveCollisionShape": {
+        "class": "PrimitiveCollisionShape3D",
+        "uid": "uid://bk8pujn7tv45v",
+        "variables": {
+            "set_primitive()": {
+                "type": "enum",
+                "value": 0
+            }
+        }
+    },
+    "BTGExampleClass_001": {
+        "class": "BTGExampleClass0",
+        "uid": "uid://cslerxu3gbk31",
+        "variables": {
+            "string_example": {
+                "type": "String",
+                "value": "(:"
+            },
+            "int_example": {
+                "type": "int",
+                "value": 1
+            },
+            "vector_example": {
+                "type": "Vector3",
+                "value": "(1.0, 2.0, 3.0)"
+            },
+            "vector_2_example": {
+                "type": "Vector2i",
+                "value": "(2, 1)"
+            },
+            "enum_example": {
+                "type": "enum",
+                "value": 2
+            }
+        }
+    }
+}
