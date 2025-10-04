@@ -168,7 +168,7 @@ def export_on_save(_) -> None:
 
 
 @bpy.app.handlers.persistent
-def get_project_root() -> Path:
+def get_project_root() -> str:
     """
     Get Godot project root by searching up the file tree
     for a `project.godot` file
@@ -178,13 +178,13 @@ def get_project_root() -> Path:
     bpy.context.scene.blend_path = path.as_posix()
 
     if bpy.context.scene.project_root != 'None' and path == old_path:
-        return Path(bpy.context.scene.project_root)
+        return bpy.context.scene.project_root
 
     for parent in path.parents:
         project_godot = parent / 'project.godot'
 
         if project_godot.exists():
             bpy.context.scene.project_root = parent.as_posix()
-            return parent
+            return parent.as_posix()
 
     raise FileNotFoundError('"res://" used but "project.godot" not found')

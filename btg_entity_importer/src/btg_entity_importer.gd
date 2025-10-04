@@ -11,12 +11,12 @@ func _get_import_options(path):
     if path.get_extension() in ["blend", "glb"]:
         _run_btg_import = true
         add_import_option_advanced(
-            TYPE_STRING, "entity_definition", "", PROPERTY_HINT_FILE, "*.json"
+            TYPE_STRING, "blender_to_godot/entity_definition", "", PROPERTY_HINT_FILE, "*.json"
         )
 
 
 func _post_process(scene):
-    var entity_definition_path = get_option_value("entity_definition")
+    var entity_definition_path = get_option_value("blender_to_godot/entity_definition")
     if entity_definition_path.is_empty():
         return scene
 
@@ -52,7 +52,7 @@ static func _import_entities_from_def(
 ) -> int:
     var num_failures = 0
     # Need to keep track of these for setting owner later
-    var tscn_children: Array[Node] = []
+    var is_tscn = false
 
     var new_node = null
     if node.name in entity_def:
@@ -68,8 +68,8 @@ static func _import_entities_from_def(
             if node_class_full_path.get_extension() == "gd":
                 new_node = load(new_class_uid).new()
             else:
+                is_tscn = true
                 new_node = load(new_class_uid).instantiate()
-                tscn_children = new_node.get_children()
 
         if new_node == null:
             push_warning(
@@ -82,21 +82,28 @@ static func _import_entities_from_def(
 
     # No early return because we still want to navigate through the whole tree
     if new_node != null:
-        new_node.transform = node.transform
+        new_node.set("transform", node.get("transform"))
         new_node.name = node.name
 
         var mesh = node.get("mesh")
         if mesh != null:
             new_node.set("mesh", mesh)
 
-        node.replace_by(new_node, true)
-        node.free()
-        node = new_node
+        if is_tscn:
+            var index = node.get_index()
+            var owner = node.owner
 
-        # If we don't set the owner of nodes from the new instantiated scene, they
-        # will be deleted upon reloading this scene
-        for child in tscn_children:
-            _recursive_set_owner(child, node.get_owner())
+            var parent = node.get_parent()
+            parent.remove_child(node)
+            node.free()
+
+            parent.add_child(new_node)
+            parent.move_child(new_node, index)
+            new_node.owner = owner
+        else:
+            node.replace_by(new_node, true)
+            node.free()
+        node = new_node
 
         var variables = entity_def[node.name]["variables"]
         for variable in variables:
@@ -167,16 +174,6 @@ static func _import_entities_from_def(
         num_failures += _import_entities_from_def(entity_def, child)
 
     return num_failures
-
-
-## Set the owner of `node` and all nodes down its tree to `owner`
-static func _recursive_set_owner(node: Node, owner: Node):
-    node.set_owner(owner)
-    var children = node.get_children()
-    if children.is_empty():
-        return
-    for child in children:
-        _recursive_set_owner(child, owner)
 
 
 static func _cast_to_type(value, type: String):
