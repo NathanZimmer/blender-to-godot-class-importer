@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
-id = "blender_to_godot_pipeline"
-version = "1.0.0"
-name = "Blender to Godot Pipeline"
+id = "blender_to_godot_class_importer"
+version = "1.0.2"
+name = "Blender to Godot Class Importer"
 tagline = "Assign Godot Node classes and variables from Blender"
 maintainer = "Nathan Zimmer"
 type = "add-on"
@@ -9,4 +9,4 @@ blender_version_min = "4.2.0"
 license = [
   "SPDX:GPL-3.0-or-later",
 ]
-website = "https://github.com/NathanZimmer/blender_to_godot_pipeline"
+website = "https://github.com/NathanZimmer/blender-to-godot-class-importer"
