@@ -75,7 +75,7 @@
         "variables": {
             "string_example": {
                 "type": "String",
-                "value": "(:"
+                "value": "):"
             },
             "int_example": {
                 "type": "int",

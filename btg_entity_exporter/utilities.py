@@ -4,6 +4,7 @@ variables defined in `__init__.register()`
 """
 
 import bpy
+from pathlib import Path
 from . import entity
 
 
@@ -164,3 +165,26 @@ def export_on_save(_) -> None:
     """
     if bpy.context.scene.export_on_save:
         bpy.ops.json.write()
+
+
+@bpy.app.handlers.persistent
+def get_project_root() -> Path:
+    """
+    Get Godot project root by searching up the file tree
+    for a `project.godot` file
+    """
+    path = Path(bpy.path.abspath('//')).absolute()
+    old_path = Path(bpy.context.scene.blend_path)
+    bpy.context.scene.blend_path = path.as_posix()
+
+    if bpy.context.scene.project_root != 'None' and path == old_path:
+        return Path(bpy.context.scene.project_root)
+
+    for parent in path.parents:
+        project_godot = parent / 'project.godot'
+
+        if project_godot.exists():
+            bpy.context.scene.project_root = parent.as_posix()
+            return parent
+
+    raise FileNotFoundError('"res://" used but "project.godot" not found')
