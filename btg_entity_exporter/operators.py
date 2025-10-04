@@ -44,7 +44,9 @@ class EntityTemplateReader(bpy.types.Operator):
         """
         entity_template_path: str = bpy.context.scene.entity_template_path
         if entity_template_path.startswith('res://'):
-            entity_template_path.replace('res://', utilities.get_project_root())
+            entity_template_path = entity_template_path.replace(
+                'res:/', utilities.get_project_root()
+            )
         with open(entity_template_path) as entity_json:
             # Place 'None' at the first index for defaulting
             bpy.context.scene.entity_template.reset({'None': ''} | json.load(entity_json))
@@ -85,7 +87,7 @@ class EntityImportWriter(bpy.types.Operator):
         try:
             if bpy.context.scene.btg_write_path.startswith('res://'):
                 btg_write_path = Path(
-                    bpy.context.scene.btg_write_path.replace('res://', utilities.get_project_root())
+                    bpy.context.scene.btg_write_path.replace('res:/', utilities.get_project_root())
                 )
             else:
                 btg_write_path = Path(bpy.context.scene.btg_write_path)
