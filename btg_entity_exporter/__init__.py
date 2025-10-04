@@ -12,9 +12,9 @@ if 'bpy' in locals():
     importlib.reload(utilities)
 
 bl_info = {
-    'name': 'Blender To Godot Pipeline',
+    'name': 'Blender To Godot Class Importer',
     'author': 'Nathan Zimmer',
-    'version': (1, 0, 0),
+    'version': (1, 0, 2),
     'blender': (4, 2, 0),
     'category': 'Object',
 }
@@ -51,6 +51,15 @@ def register():
         name='Export on save',
         description=('Write out entity definition JSON whenever the file is saved.'),
         default=False,
+    )
+    bpy.types.Scene.project_root = bpy.props.StringProperty(
+        name='Godot project root',
+        default='None',
+    )
+    # Need to know to redo project.godot search if this file moves
+    bpy.types.Scene.blend_path = bpy.props.StringProperty(
+        name='Path to this blend file',
+        default='None',
     )
 
     # Entity definition
