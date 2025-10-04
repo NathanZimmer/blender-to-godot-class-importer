@@ -5,7 +5,7 @@
         "variables": {
             "string_example": {
                 "type": "String",
-                "value": "test 9"
+                "value": "test 10"
             },
             "int_example": {
                 "type": "int",

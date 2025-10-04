@@ -158,6 +158,7 @@ def load_template(_) -> None:
     bpy.context.scene.entity_template.init_dict()
 
 
+@bpy.app.handlers.persistent
 def export_on_save(_) -> None:
     """
     Export entity definition whenever the file is saved
